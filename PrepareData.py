@@ -23,6 +23,7 @@ def prepare_data(csv_path:str, num_exp: int, num_train: int, num_test: int):
 def prepare_data_train(num_train: int,  df: pd.DataFrame ):
     result_dict = {
                 "labels": [],
+                "labels_id": [],
                 "images": []
             }
     
@@ -57,6 +58,7 @@ def prepare_data_train(num_train: int,  df: pd.DataFrame ):
             With .sample we extract # num_train or num_test elements from the dataset and with replace=False we avoid extracting duplicates
             '''
             result_dict["labels"].append(0 if df.loc[df["id"] == person_id,'gender'].iloc[0] == "male" else 1)
+            result_dict["labels_id"].append(person_id)
             '''
             From the entire df dataframe
             we filter on the id of a single person
@@ -79,6 +81,7 @@ def prepare_data_train(num_train: int,  df: pd.DataFrame ):
 def prepare_data_test(num_test: int, df: pd.DataFrame):
     result_dict = {
         "labels": [],
+        "labels_id": [],
         "images": []
     } 
     
@@ -102,6 +105,7 @@ def prepare_data_test(num_test: int, df: pd.DataFrame):
             With .sample we extract # num_train or num_test elements from the dataset and with replace=False it avoids extracting duplicates
             '''
             result_dict["labels"].append(0 if df.loc[df["id"] == person_id,'gender'].iloc[0] == "male" else 1)
+            result_dict["labels_id"].append(person_id)
             '''
             From the entire dataframe df
             we filter on a single person id

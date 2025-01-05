@@ -1,4 +1,5 @@
 from sklearn.svm import SVC
+import torch
 import torch.nn as nn
 from CNNTrainingTest import testCNN, trainingCNN
 from FeatureExtractor import extract_features
@@ -7,17 +8,19 @@ from PrepareData import prepare_data
 import torchvision
 import torchvision.models.feature_extraction as feature_extraction
 from PerformanceEvaluation import *
-from SVCTrainingTest import SVCTesting, SVCTraining
+from SVCTrainingTest import SVCTesting, SVCTraining, find_weights
 from StreamEvaluation import streamEvaluation
 from CustomTransform import buildAlexNetTransformations, buildLeNetTransformations
 
 
 # Set number of experiments
-num_exp = 5
+num_exp = 10
 image_path = '/home/mattpower/Downloads/Hands'
 csv_path = '/home/mattpower/Documents/backup/Magistrale/Sapienza/ComputerScience/Biometrics Systems/Progetto/BiometricsHandRecognition/HandInfo.csv'
-num_train = 40
-num_test = 20
+num_train = 200
+num_test = 100
+
+find_weights(csv_path)
 
 # Create the networks
 leNet = MyLeNetCNN(num_classes=2)
@@ -50,27 +53,6 @@ for param in alexNet2.classifier[6].parameters():
 net_palmar = leNet
 net_dorsal = alexNet2
 
-
-
-
-
-
-print(net_dorsal.classifier[0])
-print(net_dorsal.classifier[1])
-print(net_dorsal.classifier[2])
-print(net_dorsal.classifier[3])
-
-print(net_dorsal.features[9])
-print(net_dorsal.features[10])
-print(net_dorsal.features[11])
-print(net_dorsal.features[12], "\n")
-
-
-
-
-
-
-
 weight_palmar = 0.4
 weight_dorsal = 0.6
 
@@ -100,18 +82,18 @@ data_struct = prepare_data(csv_path=csv_path, num_exp=num_exp, num_train=num_tra
 
 # Training the networks
 print('Begin Palm Training\n')
-train_loss_p = trainingCNN(net=net_palmar, transforms=transforms, data_struct=data_struct, image_path=image_path, palmar_dorsal='palmar', tot_exp=num_exp)
+train_loss_p, train_labels_p = trainingCNN(net=net_palmar, transforms=transforms, data_struct=data_struct, image_path=image_path, palmar_dorsal='palmar', tot_exp=num_exp)
 print('\nFinished Palm Training\n')
 print('Begin Dorsal Training\n')
-train_loss_d = trainingCNN(net=net_dorsal, transforms=transforms, data_struct=data_struct, image_path=image_path, palmar_dorsal='dorsal', tot_exp=num_exp)
+train_loss_d, train_labels_d = trainingCNN(net=net_dorsal, transforms=transforms, data_struct=data_struct, image_path=image_path, palmar_dorsal='dorsal', tot_exp=num_exp)
 print('\nFinished Dorsal Training\n')
 
 # Test the networks
 print('Begin Palm Testing')
-palmar_labels, palmar_predicted = testCNN(net=net_palmar, transforms=transforms, data_struct=data_struct, image_path=image_path, palmar_dorsal='palmar', tot_exp=num_exp)
+test_labels_p, palmar_predicted = testCNN(net=net_palmar, transforms=transforms, data_struct=data_struct, image_path=image_path, palmar_dorsal='palmar', tot_exp=num_exp)
 print('Finished Palm Testing\n')
 print('Begin Dorsal Testing')
-dorsal_labels, dorsal_predicted = testCNN(net=net_dorsal, transforms=transforms, data_struct=data_struct, image_path=image_path, palmar_dorsal='dorsal', tot_exp=num_exp)
+test_labels_d, dorsal_predicted = testCNN(net=net_dorsal, transforms=transforms, data_struct=data_struct, image_path=image_path, palmar_dorsal='dorsal', tot_exp=num_exp)
 print('Finished Dorsal Testing\n')
 
 # Evaluate the unified network
@@ -119,15 +101,16 @@ print("Begin Unified Network Testing")
 un_labels, un_predicted  = streamEvaluation(net1=net_palmar, net2=net_dorsal, transforms=transforms, weights_palmar_dorsal=weights_palmar_dorsal, data_struct=data_struct, image_path=image_path, tot_exp=num_exp)
 print("Finished Unified Network Testing\n")
 
-
+'''
 # Performance evaluation
-calculate_confusion_matrix(palmar_labels, palmar_predicted)
-calculate_confusion_matrix(dorsal_labels, dorsal_predicted)
+calculate_confusion_matrix(test_labels_p, palmar_predicted)
+calculate_confusion_matrix(test_labels_d, dorsal_predicted)
 calculate_confusion_matrix(un_labels, un_predicted)
 
 # Calculate the loss plot
 calculate_loss_plot(train_loss_p)
 calculate_loss_plot(train_loss_d)
+'''
 
 # Print the performance metrics
 print("\nPerformance Metrics\n")
@@ -135,20 +118,20 @@ print("\nPerformance Metrics\n")
 print(f"\nPalmar Network= {type(net_palmar).__name__}")
 print(f"Dorsal Network= {type(net_dorsal).__name__}\n")
 
-print("\nAccuracy Palmar Network: ", calculate_accuracy(palmar_labels, palmar_predicted))
-print("Precision Palmar Network: ", calculate_precision(palmar_labels, palmar_predicted))
-print("Recall Palmar Network: ", calculate_recall(palmar_labels, palmar_predicted))
-print("F1 Score Palmar neNetworkt: ", calculate_f1_score(palmar_labels, palmar_predicted),"\n")
+print("\nAccuracy Palmar Network: ", calculate_accuracy(y_true=test_labels_p, y_pred=palmar_predicted))
+print("Precision Palmar Network: ", calculate_precision(y_true=test_labels_p, y_pred=palmar_predicted))
+print("Recall Palmar Network: ", calculate_recall(y_true=test_labels_p, y_pred=palmar_predicted))
+print("F1 Score Palmar neNetworkt: ", calculate_f1_score(y_true=test_labels_p, y_pred=palmar_predicted),"\n")
 
-print("\nAccuracy Dorsal Network: ", calculate_accuracy(dorsal_labels, dorsal_predicted))
-print("Precision Dorsal Network: ", calculate_precision(dorsal_labels, dorsal_predicted))
-print("Recall Dorsal Network: ", calculate_recall(dorsal_labels, dorsal_predicted))
-print("F1 Score Dorsal Network: ", calculate_f1_score(dorsal_labels, dorsal_predicted),"\n")
+print("\nAccuracy Dorsal Network: ", calculate_accuracy(y_true=test_labels_d, y_pred=dorsal_predicted))
+print("Precision Dorsal Network: ", calculate_precision(y_true=test_labels_d, y_pred=dorsal_predicted))
+print("Recall Dorsal Network: ", calculate_recall(y_true=test_labels_d, y_pred=dorsal_predicted))
+print("F1 Score Dorsal Network: ", calculate_f1_score(y_true=test_labels_d, y_pred=dorsal_predicted),"\n")
 
-print("\nAccuracy Unified Network: ", calculate_accuracy(un_labels, un_predicted))
-print("Precision Unified Network: ", calculate_precision(un_labels, un_predicted))
-print("Recall Unified Network: ", calculate_recall(un_labels, un_predicted))
-print("F1 Score Unified Network: ", calculate_f1_score(un_labels, un_predicted),"\n")
+print("\nAccuracy Unified Network: ", calculate_accuracy(y_true=un_labels, y_pred=un_predicted))
+print("Precision Unified Network: ", calculate_precision(y_true=un_labels, y_pred=un_predicted))
+print("Recall Unified Network: ", calculate_recall(y_true=un_labels, y_pred=un_predicted))
+print("F1 Score Unified Network: ", calculate_f1_score(y_true=un_labels, y_pred=un_predicted),"\n")
 
 
 train_node, eval_node = feature_extraction.get_graph_node_names(net_dorsal)
@@ -156,14 +139,34 @@ train_node, eval_node = feature_extraction.get_graph_node_names(net_dorsal)
 print("\nTrain Node: ", train_node, "\n")
 
 
+feature_train_p, labels_train_p = extract_features(net=net_palmar, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='train', palmar_dorsal='palmar', tot_exp=num_exp)
+feature_test_p, labels_test_p = extract_features(net=net_palmar, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='test', palmar_dorsal='palmar', tot_exp=num_exp)
 
-feature_train = extract_features(net=net_palmar, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='train', palmar_dorsal='palmar', tot_exp=num_exp)
-feature_test = extract_features(net=net_dorsal, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='test', palmar_dorsal='dorsal', tot_exp=num_exp)
+print(feature_train_p.shape)
+print(feature_test_p.shape)
 
-print(feature_train.shape)
-print(feature_test.shape)
+palmar_classifier = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight=find_weights(csv_path=csv_path))
+dorsal_classifier = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight=find_weights(csv_path=csv_path))
 
-SVCTraining(model=SVC(), train_features=feature_train, labels=palmar_labels)
-predicted = SVCTesting(model=SVC(), test_features=feature_test)
 
-print("\nAccuracy SVM: ", calculate_accuracy(dorsal_labels, predicted))
+SVCTraining(model=palmar_classifier, train_features=feature_train_p, labels=labels_train_p)
+predicted_p = SVCTesting(model=palmar_classifier, test_features=feature_test_p)
+
+
+#print(predicted_p)
+#print(labels_test_p)
+print("\nAccuracy SVM: ", calculate_accuracy(y_true=torch.detach(labels_test_p).numpy(), y_pred=predicted_p))
+
+
+feature_train_d, labels_train_d = extract_features(net=net_dorsal, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='train', palmar_dorsal='dorsal', tot_exp=num_exp)
+feature_test_d, labels_test_d = extract_features(net=net_dorsal, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='test', palmar_dorsal='dorsal', tot_exp=num_exp)
+
+print(feature_train_d.shape)
+print(feature_test_d.shape)
+
+SVCTraining(model=dorsal_classifier, train_features=feature_train_d, labels=labels_train_d)
+predicted_d = SVCTesting(model=dorsal_classifier, test_features=feature_test_d)
+
+#print(predicted_d)
+#print(labels_test_d)
+print("\nAccuracy SVM: ", calculate_accuracy(y_true=torch.detach(labels_test_d).numpy(), y_pred=predicted_d))

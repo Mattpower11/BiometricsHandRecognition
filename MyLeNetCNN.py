@@ -15,9 +15,9 @@ class MyLeNetCNN(nn.Module):
             nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size = 2, stride = 2))
-        self.fc = nn.Linear(400, 190)
+        self.fc = nn.Linear(400, 189)
         self.relu = nn.ReLU()
-        self.fc1 = nn.Linear(190, 84)
+        self.fc1 = nn.Linear(189, 84)
         self.relu1 = nn.ReLU()
         self.fc2 = nn.Linear(84, num_classes)
             

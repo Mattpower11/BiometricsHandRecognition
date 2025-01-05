@@ -21,17 +21,16 @@ def extract_features(net:nn.Module, image_path, transforms, train_test, data_str
 
         for exp in range(tot_exp):
 
-            dataset_test = CustomImageDataset(image_dir=image_path, data_structure= data_struct, id_exp=exp, train_test=train_test, palmar_dorsal=palmar_dorsal, transform=transforms)
-            data_loader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
-            for data in data_loader_test:
-                
+            dataset = CustomImageDataset(image_dir=image_path, data_structure= data_struct, id_exp=exp, train_test=train_test, palmar_dorsal=palmar_dorsal, transform=transforms, action=False)
+            data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+            for data in data_loader:     
                 images, labels = data
                 images, labels = images.to(device), labels.to(device)
                 
                 features = torch.cat((features, net(images)))
                 tot_labels = torch.cat((tot_labels, labels))
 
-    return features
+    return features, tot_labels
 
 
 def modify_net(net:nn.Module):
@@ -41,7 +40,7 @@ def modify_net(net:nn.Module):
         net.relu1 = nn.Identity()
         net.fc2 = nn.Identity()
     elif isinstance(net, torchvision.models.AlexNet):
-        net.classifier[1] = nn.Linear(in_features=9216, out_features=190, bias=True)
+        net.classifier[1] = nn.Linear(in_features=9216, out_features=189, bias=True)
         for i in range(2, len(net.classifier)):
             net.classifier[i] = nn.Identity()
     return net

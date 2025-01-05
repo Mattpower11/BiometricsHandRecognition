@@ -12,7 +12,7 @@ import numpy as np
 # palmar_dorsal: the string 'palmar' or 'dorsal'
 # transform: the list of transformations to apply to the images
 class CustomImageDataset(Dataset):
-    def __init__(self, data_structure, image_dir, id_exp, train_test, palmar_dorsal, transform=None):
+    def __init__(self, data_structure, image_dir, id_exp, train_test, palmar_dorsal, action=True, transform=None):
 
         self.labels = {}
 
@@ -21,9 +21,13 @@ class CustomImageDataset(Dataset):
         else: 
             self.image_filenames = np.array([riga[0] for riga in data_structure[id_exp][train_test]['images']]).flatten()
 
-        for x in range(0, len(self.image_filenames)):
-            self.labels[self.image_filenames[x]] = data_structure[id_exp][train_test]['labels'][x]
-        
+        if action:
+            for x in range(0, len(self.image_filenames)):
+                self.labels[self.image_filenames[x]] = data_structure[id_exp][train_test]['labels'][x]
+        else:
+            for x in range(0, len(self.image_filenames)):
+                self.labels[self.image_filenames[x]] = data_structure[id_exp][train_test]['labels_id'][x]
+            
         self.image_dir = image_dir
         self.palmar_dorsal = palmar_dorsal
         self.transform = transform

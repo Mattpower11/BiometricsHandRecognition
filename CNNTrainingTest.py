@@ -22,6 +22,7 @@ def trainingCNN(net:nn.Module, transforms:list, data_struct:dict, image_path:str
     optimizer = optim.Adam(net.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
     loss_values = []
+    tot_labels = torch.tensor([])
 
     for exp in range(tot_exp):
         #Training the model
@@ -40,11 +41,12 @@ def trainingCNN(net:nn.Module, transforms:list, data_struct:dict, image_path:str
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
+            tot_labels = torch.cat((tot_labels, labels))
 
         loss_values.append(running_loss / len(data_loader_train))
         print(f'\tEpoch {exp + 1}, Loss: {running_loss / len(data_loader_train):.4f}')
 
-    return loss_values
+    return loss_values, tot_labels
 
 def testCNN(net:nn.Module, transforms:list, data_struct:dict, image_path:str, palmar_dorsal:str, tot_exp: int, batch_size=32):
     # Move the model to the appropriate device
