@@ -42,13 +42,12 @@ def trainingCNN(net:nn.Module, transforms:list, data_struct:dict, image_path:str
             running_loss += loss.item()
 
         loss_values.append(running_loss / len(data_loader_train))
-        print(f'Epoch {exp + 1}, Loss: {running_loss / len(data_loader_train):.4f}')
+        print(f'\tEpoch {exp + 1}, Loss: {running_loss / len(data_loader_train):.4f}')
 
     return loss_values
 
 def testCNN(net:nn.Module, transforms:list, data_struct:dict, image_path:str, palmar_dorsal:str, tot_exp: int, batch_size=32):
     # Move the model to the appropriate device
-    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     net.to(device)
     net.eval()

@@ -1,19 +1,23 @@
+from sklearn.svm import SVC
 import torch.nn as nn
 from CNNTrainingTest import testCNN, trainingCNN
+from FeatureExtractor import extract_features
 from MyLeNetCNN import MyLeNetCNN
 from PrepareData import prepare_data
 import torchvision
+import torchvision.models.feature_extraction as feature_extraction
 from PerformanceEvaluation import *
+from SVCTrainingTest import SVCTesting, SVCTraining
 from StreamEvaluation import streamEvaluation
 from CustomTransform import buildAlexNetTransformations, buildLeNetTransformations
 
 
 # Set number of experiments
-num_exp = 50
-image_path = 'path/to/dataset'
-csv_path = 'GenderRecognitionViaHands/11kHands_gender_afifi2017_/Progetto/HandInfo.csv'
-num_train = 400
-num_test = 200
+num_exp = 5
+image_path = '/home/mattpower/Downloads/Hands'
+csv_path = '/home/mattpower/Documents/backup/Magistrale/Sapienza/ComputerScience/Biometrics Systems/Progetto/BiometricsHandRecognition/HandInfo.csv'
+num_train = 40
+num_test = 20
 
 # Create the networks
 leNet = MyLeNetCNN(num_classes=2)
@@ -45,6 +49,27 @@ for param in alexNet2.classifier[6].parameters():
 # Set the networks
 net_palmar = leNet
 net_dorsal = alexNet2
+
+
+
+
+
+
+print(net_dorsal.classifier[0])
+print(net_dorsal.classifier[1])
+print(net_dorsal.classifier[2])
+print(net_dorsal.classifier[3])
+
+print(net_dorsal.features[9])
+print(net_dorsal.features[10])
+print(net_dorsal.features[11])
+print(net_dorsal.features[12], "\n")
+
+
+
+
+
+
 
 weight_palmar = 0.4
 weight_dorsal = 0.6
@@ -124,3 +149,21 @@ print("\nAccuracy Unified Network: ", calculate_accuracy(un_labels, un_predicted
 print("Precision Unified Network: ", calculate_precision(un_labels, un_predicted))
 print("Recall Unified Network: ", calculate_recall(un_labels, un_predicted))
 print("F1 Score Unified Network: ", calculate_f1_score(un_labels, un_predicted),"\n")
+
+
+train_node, eval_node = feature_extraction.get_graph_node_names(net_dorsal)
+
+print("\nTrain Node: ", train_node, "\n")
+
+
+
+feature_train = extract_features(net=net_palmar, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='train', palmar_dorsal='palmar', tot_exp=num_exp)
+feature_test = extract_features(net=net_dorsal, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='test', palmar_dorsal='dorsal', tot_exp=num_exp)
+
+print(feature_train.shape)
+print(feature_test.shape)
+
+SVCTraining(model=SVC(), train_features=feature_train, labels=palmar_labels)
+predicted = SVCTesting(model=SVC(), test_features=feature_test)
+
+print("\nAccuracy SVM: ", calculate_accuracy(dorsal_labels, predicted))
