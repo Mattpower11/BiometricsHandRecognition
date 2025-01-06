@@ -17,10 +17,8 @@ from CustomTransform import buildAlexNetTransformations, buildLeNetTransformatio
 num_exp = 10
 image_path = '/home/mattpower/Downloads/Hands'
 csv_path = '/home/mattpower/Documents/backup/Magistrale/Sapienza/ComputerScience/Biometrics Systems/Progetto/BiometricsHandRecognition/HandInfo.csv'
-num_train = 200
-num_test = 100
-
-find_weights(csv_path)
+num_train = 100
+num_test = 50
 
 # Create the networks
 leNet = MyLeNetCNN(num_classes=2)
@@ -78,7 +76,7 @@ transforms = [
 weights_palmar_dorsal = [weight_palmar, weight_dorsal]
 
 # Prepare data
-data_struct = prepare_data(csv_path=csv_path, num_exp=num_exp, num_train=num_train, num_test=num_test)
+data_struct = prepare_data(csv_path=csv_path, num_exp=num_exp, num_train=num_train, num_test=num_test, action=False)
 
 # Training the networks
 print('Begin Palm Training\n')
@@ -145,8 +143,8 @@ feature_test_p, labels_test_p = extract_features(net=net_palmar, data_struct=dat
 print(feature_train_p.shape)
 print(feature_test_p.shape)
 
-palmar_classifier = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight=find_weights(csv_path=csv_path))
-dorsal_classifier = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight=find_weights(csv_path=csv_path))
+palmar_classifier = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
+dorsal_classifier = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
 
 
 SVCTraining(model=palmar_classifier, train_features=feature_train_p, labels=labels_train_p)

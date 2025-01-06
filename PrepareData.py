@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def prepare_data(csv_path:str, num_exp: int, num_train: int, num_test: int):
+def prepare_data(csv_path:str, num_exp: int, num_train: int, num_test: int, action: bool = True):
     # Load the data from csv metadata file
     df = pd.read_csv(csv_path)
     # Create a data structure to store the images' name and the corresponding label
@@ -15,12 +15,17 @@ def prepare_data(csv_path:str, num_exp: int, num_train: int, num_test: int):
         data_structure[indExp] = {}
         df['check'] = False
         data_structure[indExp]['train'], df = prepare_data_train(num_train= num_train, df = df)
-        data_structure[indExp]['test']= prepare_data_test(num_test= num_test, df=df)  
+
+        if action:
+            data_structure[indExp]['test']= prepare_data_test(num_test= num_test, df=df) 
+        else:
+            temp_set = set(data_structure[indExp]['train']['labels_id'])
+            data_structure[indExp]['test']= prepare_data_test(num_test= num_test, df=df, extracted_person_id_list=list(temp_set)) 
     
     print("Data Preparation Completed\n")
     return data_structure
 
-def prepare_data_train(num_train: int,  df: pd.DataFrame ):
+def prepare_data_train(num_train: int,  df: pd.DataFrame):
     result_dict = {
                 "labels": [],
                 "labels_id": [],
@@ -78,7 +83,7 @@ def prepare_data_train(num_train: int,  df: pd.DataFrame ):
             result_dict["images"].append([palmar_img, dorsal_img])
     return result_dict, df
 
-def prepare_data_test(num_test: int, df: pd.DataFrame):
+def prepare_data_test(num_test: int, df: pd.DataFrame, extracted_person_id_list: np.array = None):
     result_dict = {
         "labels": [],
         "labels_id": [],
@@ -86,11 +91,15 @@ def prepare_data_test(num_test: int, df: pd.DataFrame):
     } 
     
     male_female_list = ['male', 'female']
+    person_id_list = []
 
     print("\t\tTesting\n")
 
     for gender in male_female_list:
-        person_id_list = df.loc[(df['gender'] == gender), 'id'].unique()
+        if extracted_person_id_list is None:
+            person_id_list = df.loc[(df['gender'] == gender), 'id'].unique()
+        else:
+            person_id_list = extracted_person_id_list
 
         for person_id in person_id_list:
             if df.loc[(df['id'] == person_id) & (df['aspectOfHand'].str.contains('palmar')), 'check'].all() or df.loc[(df['id'] == person_id) & (df['aspectOfHand'].str.contains('dorsal')), 'check'].all():

@@ -4,7 +4,7 @@ import seaborn as sns
 
 def calculate_accuracy(y_pred, y_true):
     cm = confusion_matrix(y_true, y_pred)
-    return round((cm[1,1] + cm[0,0])/len(y_true),5)
+    return (cm[1,1] + cm[0,0])/len(y_true)
 
 def calculate_confusion_matrix(y_pred, y_true):
     # Compute confusion matrix
