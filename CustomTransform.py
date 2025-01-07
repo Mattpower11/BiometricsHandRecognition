@@ -52,6 +52,19 @@ class CustomLeNetTransform:
         return Image.fromarray(final_8u, mode='L')
 
 
+# Custom transformation for LeNet
+class CustomLBPTransform:
+    def __call__(self, pil_image):
+        # Convert PIL -> RGB -> NumPy
+        pil_image = pil_image.convert('RGB')
+        np_image = np.array(pil_image, dtype=np.uint8)
+        gray_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
+        # Equalize hist
+        contrast = cv2.equalizeHist(gray_image)
+        # Return PIL image (mode='L' = single channel)
+        return Image.fromarray(contrast, mode='L')
+    
+    
 # To normalize one image [values range 0:1]
 def imageNormalization(image: np.ndarray):
     # E.g., convert from [0..255] to [0..1] float
@@ -73,5 +86,12 @@ def buildAlexNetTransformations():
 def buildLeNetTransformations():
     return transforms.Compose([
         CustomLeNetTransform(),
+        transforms.ToTensor(),          
+    ])
+
+# Build LBP trasformations
+def buildLBPTransformations():
+    return transforms.Compose([
+        CustomLBPTransform(),
         transforms.ToTensor(),          
     ])

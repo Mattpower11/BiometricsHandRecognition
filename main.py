@@ -2,29 +2,33 @@ from sklearn.svm import SVC
 import torch
 import torch.nn as nn
 from CNNTrainingTest import testCNN, trainingCNN
-from FeatureExtractor import extract_features
+from FeatureExtractor import extract_CNN_features, extract_LBP_features
 from MyLeNetCNN import MyLeNetCNN
 from PrepareData import prepare_data
 import torchvision
 import torchvision.models.feature_extraction as feature_extraction
 from PerformanceEvaluation import *
-from SVCTrainingTest import SVCTesting, SVCTraining, find_weights
+from SVCTrainingTest import find_best_match, find_weights
 from StreamEvaluation import streamEvaluation
-from CustomTransform import buildAlexNetTransformations, buildLeNetTransformations
+from CustomTransform import buildAlexNetTransformations, buildLBPTransformations, buildLeNetTransformations
 
 
 # Set number of experiments
-num_exp = 10
+num_exp = 2
 image_path = '/home/mattpower/Downloads/Hands'
 csv_path = '/home/mattpower/Documents/backup/Magistrale/Sapienza/ComputerScience/Biometrics Systems/Progetto/BiometricsHandRecognition/HandInfo.csv'
-num_train = 100
+num_train = 30
 num_test = 50
+
+# Prepare data
+data_struct = prepare_data(csv_path=csv_path, num_exp=num_exp, num_train=num_train, num_test=num_test, action=False)
+
 
 # Create the networks
 leNet = MyLeNetCNN(num_classes=2)
 alexNet1 = torchvision.models.alexnet(weights=torchvision.models.AlexNet_Weights.IMAGENET1K_V1)
 alexNet2 = torchvision.models.alexnet(weights=torchvision.models.AlexNet_Weights.IMAGENET1K_V1)
-
+'''
 # Customize AlexNet1
 # Update the final layer to output 2 classes
 num_features = alexNet1.classifier[6].in_features
@@ -74,10 +78,9 @@ transforms = [
 
 # Weights for the fusion
 weights_palmar_dorsal = [weight_palmar, weight_dorsal]
+'''
 
-# Prepare data
-data_struct = prepare_data(csv_path=csv_path, num_exp=num_exp, num_train=num_train, num_test=num_test, action=False)
-
+'''
 # Training the networks
 print('Begin Palm Training\n')
 train_loss_p, train_labels_p = trainingCNN(net=net_palmar, transforms=transforms, data_struct=data_struct, image_path=image_path, palmar_dorsal='palmar', tot_exp=num_exp)
@@ -98,6 +101,7 @@ print('Finished Dorsal Testing\n')
 print("Begin Unified Network Testing")
 un_labels, un_predicted  = streamEvaluation(net1=net_palmar, net2=net_dorsal, transforms=transforms, weights_palmar_dorsal=weights_palmar_dorsal, data_struct=data_struct, image_path=image_path, tot_exp=num_exp)
 print("Finished Unified Network Testing\n")
+'''
 
 '''
 # Performance evaluation
@@ -109,7 +113,7 @@ calculate_confusion_matrix(un_labels, un_predicted)
 calculate_loss_plot(train_loss_p)
 calculate_loss_plot(train_loss_d)
 '''
-
+'''
 # Print the performance metrics
 print("\nPerformance Metrics\n")
 
@@ -132,13 +136,9 @@ print("Recall Unified Network: ", calculate_recall(y_true=un_labels, y_pred=un_p
 print("F1 Score Unified Network: ", calculate_f1_score(y_true=un_labels, y_pred=un_predicted),"\n")
 
 
-train_node, eval_node = feature_extraction.get_graph_node_names(net_dorsal)
 
-print("\nTrain Node: ", train_node, "\n")
-
-
-feature_train_p, labels_train_p = extract_features(net=net_palmar, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='train', palmar_dorsal='palmar', tot_exp=num_exp)
-feature_test_p, labels_test_p = extract_features(net=net_palmar, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='test', palmar_dorsal='palmar', tot_exp=num_exp)
+feature_train_p, labels_train_p = extract_CNN_features(net=net_palmar, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='train', palmar_dorsal='palmar', tot_exp=num_exp)
+feature_test_p, labels_test_p = extract_CNN_features(net=net_palmar, data_struct=data_struct, image_path=image_path, transforms=transforms, train_test='test', palmar_dorsal='palmar', tot_exp=num_exp)
 
 print(feature_train_p.shape)
 print(feature_test_p.shape)
@@ -168,3 +168,18 @@ predicted_d = SVCTesting(model=dorsal_classifier, test_features=feature_test_d)
 #print(predicted_d)
 #print(labels_test_d)
 print("\nAccuracy SVM: ", calculate_accuracy(y_true=torch.detach(labels_test_d).numpy(), y_pred=predicted_d))
+'''
+
+transforms = [
+    buildLBPTransformations(),
+    buildLBPTransformations()
+]
+
+#variable2 = np.asarray(variable1, dtype="object")
+
+model_features = extract_LBP_features(image_path= image_path, data_struct=data_struct, exp=0, palmar_dorsal='palmar', train_test='train', num_points=8, radius=1, method='uniform', batch_size=32, transforms=transforms)
+query_features = extract_LBP_features(image_path= image_path, data_struct=data_struct, exp=1, palmar_dorsal='palmar', train_test='train', num_points=8, radius=1, method='uniform', batch_size=32, transforms=transforms)
+
+predicted, _ = find_best_match(model_images=model_features, query_images=query_features, dist_type='euclidean', hist_type='grayvalue', num_bins=8)
+
+print(f"Accuracy LBP: {calculate_accuracy(y_true=torch.tensor(data_struct[1]["train"]["labels_id"]), y_pred=torch.tensor(predicted))}")
