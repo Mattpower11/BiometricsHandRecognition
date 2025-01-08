@@ -14,9 +14,9 @@ from CustomTransform import buildAlexNetTransformations, buildLBPTransformations
 
 
 # Set number of experiments
-num_exp = 2
-image_path = '/home/mattpower/Downloads/Hands'
-csv_path = '/home/mattpower/Documents/backup/Magistrale/Sapienza/ComputerScience/Biometrics Systems/Progetto/BiometricsHandRecognition/HandInfo.csv'
+num_exp = 10
+image_path = 'C:/Users/aless/OneDrive/Desktop/Hands/Hands'
+csv_path = 'BiometricsHandRecognition/HandInfo.csv'
 num_train = 30
 num_test = 50
 
@@ -180,6 +180,6 @@ transforms = [
 model_features = extract_LBP_features(image_path= image_path, data_struct=data_struct, exp=0, palmar_dorsal='palmar', train_test='train', num_points=8, radius=1, method='uniform', batch_size=32, transforms=transforms)
 query_features = extract_LBP_features(image_path= image_path, data_struct=data_struct, exp=1, palmar_dorsal='palmar', train_test='train', num_points=8, radius=1, method='uniform', batch_size=32, transforms=transforms)
 
-predicted, _ = find_best_match(model_images=model_features, query_images=query_features, dist_type='euclidean', hist_type='grayvalue', num_bins=8)
+predicted, _ = find_best_match(model_images=model_features, query_images=query_features, dist_type='ce', hist_type='grayvalue', num_bins=8) #was euclidean e grayvalue
 
 print(f"Accuracy LBP: {calculate_accuracy(y_true=torch.tensor(data_struct[1]["train"]["labels_id"]), y_pred=torch.tensor(predicted))}")

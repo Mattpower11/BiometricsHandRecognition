@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.svm import SVC
-
+import matplotlib.pyplot as plt
 from CustomImageDataset import CustomImageDataset
 from utility import compute_histograms, get_dist_by_name, is_grayvalue_hist
 
@@ -87,6 +87,29 @@ def find_best_match(
     #calcolo degli istogrammi
     model_hist = compute_histograms(model_images, hist_type, is_grayvalue_hist(hist_type), num_bins)
     query_hist = compute_histograms(query_images, hist_type, is_grayvalue_hist(hist_type), num_bins)
+
+    m_hist = model_hist[0]
+    q_hist = query_hist[0]
+
+    # Array di indici di bin
+    bins = np.arange(len(m_hist))  #if num_bins=8, bins = [0,1,...,7]
+
+    plt.figure(figsize=(10, 4))
+
+    plt.subplot(1, 2, 1)
+    plt.bar(bins, m_hist, width=0.8, color="blue", alpha=0.7)
+    plt.title("Model Histogram")
+    plt.xlabel("Bin index")
+    plt.ylabel("Frequency (or Probability)")
+
+    plt.subplot(1, 2, 2)
+    plt.bar(bins, q_hist, width=0.8, color="red", alpha=0.7)
+    plt.title("Query Histogram")
+    plt.xlabel("Bin index")
+    plt.ylabel("Frequency (or Probability)")
+
+    plt.tight_layout()
+    plt.show()
 
     #calcolo della distanza tra gli istogrammi
     for i, model in enumerate(model_hist):

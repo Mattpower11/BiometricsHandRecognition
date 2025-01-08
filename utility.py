@@ -73,8 +73,61 @@ def get_hist_by_name(img: np.ndarray, num_bins_gray: int, hist_name: str) -> np.
         return gb_hist(img, num_bins_gray)
     elif hist_name == "dxdy":
         return hist_dxdy(img, num_bins_gray)
+    elif hist_name == "grayvalue":
+        # Call the helper we defined above
+        return compute_gray_histogram(img, num_bins_gray, normalize=True)
     else:
         assert False, "unknown hist type: %s" % hist_name
+
+
+def compute_gray_histogram(img: np.ndarray, num_bins: int, normalize: bool = True) -> np.ndarray:
+    """
+    Computes a grayscale histogram of the image.
+
+    Args:
+        img (np.ndarray): The input image (BGR or already grayscale).
+        num_bins (int): The number of bins.
+        normalize (bool): If True, normalizes the histogram to sum to 1.
+
+    Returns:
+        np.ndarray: The histogram array of shape (num_bins,).
+    """
+    # If image has 3 channels, convert it to grayscale
+    # If you have OpenCV, you can do:
+    #   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Otherwise, if your image is in [0,1] range:
+    #   from skimage.color import rgb2gray
+    #   gray = rgb2gray(img) * 255
+    # Or if your image is already grayscale, just skip conversion.
+
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        # Assume channel order is BGR or RGB
+        # For a pure NumPy approach without skimage/cv2:
+        # Convert to grayscale by a common weighting of RGB channels
+        #   Y = 0.299 R + 0.587 G + 0.114 B
+        # Here we assume channel order = BGR or RGB. 
+        # If you have an actual guarantee, adjust coefficients accordingly.
+        gray = 0.299 * img[:, :, 0] + 0.587 * img[:, :, 1] + 0.114 * img[:, :, 2]
+    else:
+        # Already single-channel or 2D
+        gray = img
+    
+    # Ensure the range is correct, e.g., 0..255
+    # If your image is float [0..1], multiply by 255
+    # If your image is already [0..255], you can keep it as is.
+    # For safety:
+    gray = np.clip(gray, 0, 255)
+    gray = gray.astype(np.uint8)
+
+    # Compute the histogram
+    hist, _ = np.histogram(gray, bins=num_bins, range=(0, 256))
+
+    # Convert to float and normalize if desired
+    hist = hist.astype(np.float32)
+    if normalize and hist.sum() > 0:
+        hist /= hist.sum()
+
+    return hist
 
 def gb_hist(img_color_double: np.ndarray, num_bins: int = 5) -> np.ndarray:
     """
