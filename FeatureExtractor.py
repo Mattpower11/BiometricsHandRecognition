@@ -47,14 +47,21 @@ def modify_net(net:nn.Module):
 
 def extract_LBP_features(image_path:str, data_struct:dict, exp:int, palmar_dorsal:str, train_test:str, num_points:int, radius:int, method:str, batch_size:int, transforms):
     features = []
+    tot_labels = torch.tensor([])
 
-    dataset_train = CustomImageDataset(image_dir=image_path, data_structure = data_struct, id_exp=exp, train_test=train_test, palmar_dorsal=palmar_dorsal, transform=transforms)
-    data_loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=False)
+    dataset = CustomImageDataset(image_dir=image_path, data_structure = data_struct, id_exp=exp, train_test=train_test, palmar_dorsal=palmar_dorsal, transform=transforms, action=False)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
-    for data in data_loader_train:
-        print(data[0])
-        for image in data[0]:
-            print(image)
-            features.append(local_binary_pattern( (np.asarray(image)).reshape(2, 960000), num_points, radius, method))
-    return features
+    for images, labels in data_loader:
+        for image in images:
+            lbp = local_binary_pattern(np.array(image, dtype=np.int64).reshape(1200,1600), num_points, radius, method="uniform")       
+            n_bins = int(lbp.max() + 1)                  
+            (hist, _) = np.histogram(lbp.ravel(), bins=np.arange(0, n_bins), range=(0, n_bins))                                                 
+                            
+            hist = hist.astype("float")                         
+            hist /= (hist.sum() + 10e-6)
+            features.append(hist)
+        tot_labels = torch.cat((tot_labels, labels))
+
+    return features, np.array(tot_labels, dtype=np.int64)
 

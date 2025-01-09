@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 def calculate_accuracy(y_pred, y_true):
-    cm = confusion_matrix(y_true, y_pred)
-    return (cm[1,1] + cm[0,0])/len(y_true)
+    return sum(y_pred == y_true) / len(y_true)
 
 def calculate_confusion_matrix(y_pred, y_true):
     # Compute confusion matrix

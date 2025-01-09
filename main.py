@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.svm import SVC
 import torch
 import torch.nn as nn
@@ -8,16 +9,16 @@ from PrepareData import prepare_data
 import torchvision
 import torchvision.models.feature_extraction as feature_extraction
 from PerformanceEvaluation import *
-from SVCTrainingTest import find_best_match, find_weights
+from SVCTrainingTest import SVC_Testing, SVC_Training, find_best_match, find_weights
 from StreamEvaluation import streamEvaluation
 from CustomTransform import buildAlexNetTransformations, buildLBPTransformations, buildLeNetTransformations
 
 
 # Set number of experiments
-num_exp = 10
-image_path = 'C:/Users/aless/OneDrive/Desktop/Hands/Hands'
-csv_path = 'BiometricsHandRecognition/HandInfo.csv'
-num_train = 30
+num_exp = 2
+image_path = '/home/mattpower/Downloads/Hands'
+csv_path = '/home/mattpower/Documents/backup/Magistrale/Sapienza/ComputerScience/Biometrics Systems/Progetto/BiometricsHandRecognition/HandInfo.csv'
+num_train = 80
 num_test = 50
 
 # Prepare data
@@ -175,11 +176,24 @@ transforms = [
     buildLBPTransformations()
 ]
 
+svc = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
+radius = 3
+num_points = 8 * radius
+
+
 #variable2 = np.asarray(variable1, dtype="object")
 
-model_features = extract_LBP_features(image_path= image_path, data_struct=data_struct, exp=0, palmar_dorsal='palmar', train_test='train', num_points=8, radius=1, method='uniform', batch_size=32, transforms=transforms)
-query_features = extract_LBP_features(image_path= image_path, data_struct=data_struct, exp=1, palmar_dorsal='palmar', train_test='train', num_points=8, radius=1, method='uniform', batch_size=32, transforms=transforms)
+model_features, model_labels = extract_LBP_features(image_path= image_path, data_struct=data_struct, exp=0, palmar_dorsal='palmar', train_test='train', num_points=8, radius=2, method='uniform', batch_size=32, transforms=transforms)
+query_features, query_labels = extract_LBP_features(image_path= image_path, data_struct=data_struct, exp=1, palmar_dorsal='palmar', train_test='train', num_points=8, radius=1, method='uniform', batch_size=32, transforms=transforms)
 
-predicted, _ = find_best_match(model_images=model_features, query_images=query_features, dist_type='ce', hist_type='grayvalue', num_bins=8) #was euclidean e grayvalue
+print(np.array(model_features).shape)
+print(np.array(query_features).shape)
+print(len(set(model_labels)))
+print(len(set(query_labels)))
 
-print(f"Accuracy LBP: {calculate_accuracy(y_true=torch.tensor(data_struct[1]["train"]["labels_id"]), y_pred=torch.tensor(predicted))}")
+#predicted, _ = find_best_match(model_images=model_features, query_images=query_features, dist_type='ce', hist_type='grayvalue', num_bins=8) #was euclidean e grayvalue
+SVC_Training(model=svc, train_features=model_features, labels=model_labels)
+predicted = SVC_Testing(model=svc, test_features=query_features)
+print(predicted)
+
+print(f"Accuracy LBP: {calculate_accuracy(y_true=query_labels, y_pred=predicted)}")

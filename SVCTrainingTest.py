@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from CustomImageDataset import CustomImageDataset
 from utility import compute_histograms, get_dist_by_name, is_grayvalue_hist
 
-def SVC_CNN_Training(model: SVC, train_features, labels):
+def SVC_Training(model: SVC, train_features, labels):
     # Standardize features 
     scaler = StandardScaler() 
     X_train = scaler.fit_transform(train_features) 
@@ -15,7 +15,7 @@ def SVC_CNN_Training(model: SVC, train_features, labels):
     # Train the model
     model.fit(X_train, labels)
 
-def SVC_CNN_Testing(model: SVC, test_features):
+def SVC_Testing(model: SVC, test_features):
     # Standardize features 
     scaler = StandardScaler() 
     X_test = scaler.fit_transform(test_features) 
@@ -122,3 +122,4 @@ def find_best_match(
 
 
     return best_match, D
+

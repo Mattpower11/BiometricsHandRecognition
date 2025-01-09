@@ -27,6 +27,7 @@ class CustomImageDataset(Dataset):
         else:
             for x in range(0, len(self.image_filenames)):
                 self.labels[self.image_filenames[x]] = data_structure[id_exp][train_test]['labels_id'][x]
+            print(len(self.labels.items()))
             
         self.image_dir = image_dir
         self.palmar_dorsal = palmar_dorsal
