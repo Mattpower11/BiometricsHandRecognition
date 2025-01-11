@@ -3,7 +3,7 @@ from sklearn.svm import SVC
 import torch
 import torch.nn as nn
 from CNNTrainingTest import testCNN, trainingCNN
-from FeatureExtractor import extract_CNN_features, extract_LBP_features
+from FeatureExtractor import extract_CNN_features, extract_HOG_features, extract_LBP_features
 from MyLeNetCNN import MyLeNetCNN
 from PrepareData import prepare_data_CNN, prepare_data_SVC
 import torchvision
@@ -11,7 +11,7 @@ import torchvision.models.feature_extraction as feature_extraction
 from PerformanceEvaluation import *
 from SVCTrainingTest import SVC_Testing, SVC_Training, find_best_match, find_weights
 from StreamEvaluation import streamEvaluation
-from CustomTransform import buildAlexNetTransformations, buildLBPTransformations, buildLeNetTransformations
+from CustomTransform import buildAlexNetTransformations, buildHOGTransformations, buildLBPTransformations, buildLeNetTransformations
 
 
 # Set number of experiments
@@ -143,29 +143,82 @@ transformsLBP = [
     buildLBPTransformations()
 ]
 
+transformsHOG = [
+    buildHOGTransformations(),
+    buildHOGTransformations()
+]
+
 transformsCNN = [
     buildAlexNetTransformations(),
     buildAlexNetTransformations()
 ]
 
-svcLBP = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
-svcCNN = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
+svcLBP_p = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
+svcLBP_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
+svcHOG_p = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
+svcHOG_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
+
+#svcCNN = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
+
+# Number of subjects and images
+num_sub = 5
+num_img = 40
+
+# ------------------- LBP features extractor ---------------
+
+# LBP parameters
 radius = 1
 num_points = 8 * radius
 method = 'uniform'
-num_sub = 25
-num_img = 30
 
-
+# Prepare data
 result_dict = prepare_data_SVC(csv_path=csv_path, num_img=num_img, num_sub=num_sub)
 
-feature_train = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
-feature_test = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
+
+feature_train_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
+feature_test_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
 
 
-SVC_Training(model=svcLBP, train_features=feature_train, labels=result_dict['train']['person_id'])
-predicted = SVC_Testing(model=svcLBP, test_features=feature_test)
-print(f"Accuracy LBP: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
+
+SVC_Training(model=svcLBP_p, train_features=feature_train_p, labels=result_dict['train']['person_id'])
+predicted = SVC_Testing(model=svcLBP_p, test_features=feature_test_p)
+print(f"Accuracy LBP palmar: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
+
+
+
+feature_train_d= extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
+feature_test_d = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
+
+
+SVC_Training(model=svcLBP_d, train_features=feature_train_d, labels=result_dict['train']['person_id'])
+predicted = SVC_Testing(model=svcLBP_d, test_features=feature_test_d)
+print(f"Accuracy LBP dorsal: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
+
+
+
+# ------------------- HOG features extractor ---------------
+# HOG parameters
+orientations = 8
+pixels_per_cell = 16
+cells_per_block = 1
+batch_size = 32
+block_norm = 'L2-Hys'
+
+feature_train_p = extract_HOG_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='train', orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block, batch_size=batch_size, block_norm=block_norm, transforms=transformsHOG)
+feature_test_p = extract_HOG_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='test', orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block, batch_size=batch_size, block_norm=block_norm, transforms=transformsHOG)
+
+SVC_Training(model=svcHOG_p, train_features=feature_train_p, labels=result_dict['train']['person_id'])
+predicted = SVC_Testing(model=svcHOG_p, test_features=feature_test_p)
+print(f"Accuracy HOG palmar: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
+
+
+feature_train_d= extract_HOG_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='train', orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block, batch_size=batch_size, block_norm=block_norm)
+feature_test_d = extract_HOG_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='test', orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block, batch_size=batch_size, block_norm=block_norm)
+
+
+SVC_Training(model=svcHOG_d, train_features=feature_train_d, labels=result_dict['train']['person_id'])
+predicted = SVC_Testing(model=svcHOG_d, test_features=feature_test_d)
+print(f"Accuracy HOG dorsal: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
 
 
 '''

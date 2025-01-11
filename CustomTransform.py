@@ -64,6 +64,17 @@ class CustomLBPTransform:
         # Return PIL image (mode='L' = single channel)
         return Image.fromarray(contrast, mode='L')
     
+# Custom transformation for HOG
+class CustomHOGTransform:
+    def __call__(self, pil_image):
+        # Convert PIL -> RGB -> NumPy
+        image = pil_image.convert('RGB')
+        image = np.array(pil_image, dtype=np.uint8)
+       
+        
+        image = cv2.resize(image, (512, 512))
+       
+        return Image.fromarray(image, mode='RGB')
     
 # To normalize one image [values range 0:1]
 def imageNormalization(image: np.ndarray):
@@ -93,5 +104,12 @@ def buildLeNetTransformations():
 def buildLBPTransformations():
     return transforms.Compose([
         CustomLBPTransform(),
+        transforms.ToTensor(),          
+    ])
+
+# Build HOG trasformations
+def buildHOGTransformations():
+    return transforms.Compose([
+        CustomHOGTransform(),
         transforms.ToTensor(),          
     ])

@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-
+from skimage.feature import hog
 from torch.utils.data import DataLoader
 import torchvision
 from CustomImageDataset import CustomImageDataset
@@ -57,3 +57,16 @@ def extract_LBP_features(image_path:str, data_struct:dict, palmar_dorsal:str, tr
         
     return features
 
+def extract_HOG_features(image_path:str, data_struct:dict, palmar_dorsal:str, train_test:str, orientations:int, pixels_per_cell:int, cells_per_block:int, batch_size:int, block_norm="L2-Hys", transforms=None):
+    features = []
+
+    dataset = CustomImageDataset(image_dir=image_path, data_structure = data_struct, train_test=train_test, palmar_dorsal=palmar_dorsal, action=False, transform=transforms)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+    for images, _ in data_loader:
+        for image in images:
+            # multichannel=True
+            hog_features = hog(image, orientations=orientations, pixels_per_cell=(pixels_per_cell, pixels_per_cell), cells_per_block=(cells_per_block, cells_per_block), transform_sqrt=True, block_norm=block_norm, channel_axis=-1)
+            features.append(hog_features)
+        
+    return features

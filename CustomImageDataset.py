@@ -48,8 +48,9 @@ class CustomImageDataset(Dataset):
         img_path = os.path.join(self.image_dir, img_name)  
         image = Image.open(img_path).convert("RGB")
         label = self.labels[img_name]
-        if self.palmar_dorsal == 'palmar':
-            image = self.transform[0](image)
-        else: 
-            image = self.transform[1](image)
+        if self.transform != None:  
+            if self.palmar_dorsal == 'palmar':
+                image = self.transform[0](image)
+            else: 
+                image = self.transform[1](image)
         return image, label
