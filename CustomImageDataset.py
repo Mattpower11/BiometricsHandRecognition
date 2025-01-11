@@ -12,22 +12,26 @@ import numpy as np
 # palmar_dorsal: the string 'palmar' or 'dorsal'
 # transform: the list of transformations to apply to the images
 class CustomImageDataset(Dataset):
-    def __init__(self, data_structure, image_dir, id_exp, train_test, palmar_dorsal, action=True, transform=None):
+    def __init__(self, data_structure, image_dir, id_exp=0, train_test='train', palmar_dorsal='palmar', action=True, transform=None):
 
         self.labels = {}
 
-        if palmar_dorsal == 'dorsal':    
-            self.image_filenames = np.array([riga[1] for riga in data_structure[id_exp][train_test]['images']]).flatten()
-        else: 
-            self.image_filenames = np.array([riga[0] for riga in data_structure[id_exp][train_test]['images']]).flatten()
-
         if action:
+            if palmar_dorsal == 'dorsal':    
+                self.image_filenames = np.array([riga[1] for riga in data_structure[id_exp][train_test]['images']]).flatten()
+            else: 
+                self.image_filenames = np.array([riga[0] for riga in data_structure[id_exp][train_test]['images']]).flatten()
+
             for x in range(0, len(self.image_filenames)):
                 self.labels[self.image_filenames[x]] = data_structure[id_exp][train_test]['labels'][x]
         else:
+            if palmar_dorsal == 'dorsal':    
+                self.image_filenames = np.array([riga[1] for riga in data_structure[train_test]['images']]).flatten()
+            else: 
+                self.image_filenames = np.array([riga[0] for riga in data_structure[train_test]['images']]).flatten()
+
             for x in range(0, len(self.image_filenames)):
-                self.labels[self.image_filenames[x]] = data_structure[id_exp][train_test]['labels_id'][x]
-            print(len(self.labels.items()))
+                self.labels[self.image_filenames[x]] = data_structure[train_test]['person_id'][x]
             
         self.image_dir = image_dir
         self.palmar_dorsal = palmar_dorsal
