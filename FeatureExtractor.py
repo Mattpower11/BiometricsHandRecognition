@@ -1,3 +1,4 @@
+from PIL import Image
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,6 +8,7 @@ import torchvision
 from CustomImageDataset import CustomImageDataset
 from MyLeNetCNN import MyLeNetCNN
 from skimage.feature import local_binary_pattern
+from skimage.color import rgb2gray
 
 def extract_CNN_features(net:nn.Module, num_classes, image_path, transforms, train_test, data_struct, palmar_dorsal, batch_size=32):
     features = torch.tensor([])
@@ -57,16 +59,40 @@ def extract_LBP_features(image_path:str, data_struct:dict, palmar_dorsal:str, tr
         
     return features
 
-def extract_HOG_features(image_path:str, data_struct:dict, palmar_dorsal:str, train_test:str, orientations:int, pixels_per_cell:int, cells_per_block:int, batch_size:int, block_norm="L2-Hys", transforms=None):
+def extract_HOG_features(image_path: str, data_struct: dict, palmar_dorsal: str, train_test: str, orientations: int, pixels_per_cell: int, cells_per_block: int, batch_size: int, block_norm="L2-Hys", transforms=None):
     features = []
 
-    dataset = CustomImageDataset(image_dir=image_path, data_structure = data_struct, train_test=train_test, palmar_dorsal=palmar_dorsal, action=False, transform=transforms)
+    dataset = CustomImageDataset(image_dir=image_path, data_structure=data_struct, train_test=train_test, palmar_dorsal=palmar_dorsal, action=False, transform=transforms)
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     for images, _ in data_loader:
         for image in images:
-            # multichannel=True
-            hog_features = hog(image, orientations=orientations, pixels_per_cell=(pixels_per_cell, pixels_per_cell), cells_per_block=(cells_per_block, cells_per_block), transform_sqrt=True, block_norm=block_norm, channel_axis=-1)
+            # Debug: Print original shape
+            print("Original IMAGE SHAPE ****** ", image.shape)
+
+            # Convert to NumPy and rearrange dimensions if needed
+            if isinstance(image, torch.Tensor):
+                image = image.permute(1, 2, 0).numpy()  # (C, H, W) -> (H, W, C)
+            elif isinstance(image, Image.Image):
+                image = np.array(image)  # Convert PIL Image to NumPy array
+
+            # Ensure the channel axis is last
+            if image.shape[0] == 3:  # (3, H, W) -> (H, W, 3)
+                image = np.transpose(image, (1, 2, 0))
+
+            # Convert to grayscale
+            image = rgb2gray(image)  # Ensures a 2D (H, W) array
+            print("After rgb2gray IMAGE SHAPE ****** ", image.shape)
+
+            # Extract HOG features
+            hog_features = hog(
+                image,
+                orientations=orientations,
+                pixels_per_cell=(pixels_per_cell, pixels_per_cell),
+                cells_per_block=(cells_per_block, cells_per_block),
+                transform_sqrt=True,
+                block_norm=block_norm
+            )
             features.append(hog_features)
         
     return features
