@@ -21,9 +21,9 @@ def SVC_Testing(model: SVC, test_features):
     X_test = scaler.fit_transform(test_features) 
     
     # Test the model
-    predicted = model.predict(X_test)
+    prob_matrix = model.predict_proba(X_test)
 
-    return predicted
+    return prob_matrix
 
 def find_weights(csv_path:str):
     # Load the data from csv metadata file

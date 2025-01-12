@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from PIL import Image
+from torch import Size 
 from torchvision import transforms
 
 # Custom transformation for AlexNet
@@ -66,14 +67,17 @@ class CustomLBPTransform:
     
 # Custom transformation for HOG
 class CustomHOGTransform:
+    def __init__(self, ksize:Size, sigma:float):
+        self.ksize=ksize
+        self.sigma=sigma
+
     def __call__(self, pil_image):
         # Convert PIL -> RGB -> NumPy
         image = pil_image.convert('RGB')
         image = np.array(pil_image, dtype=np.uint8)
-       
+        gaussian_blurred = cv2.GaussianBlur(image, self.ksize, self.sigma) 
         
-        image = cv2.resize(image, (1024, 1024))
-       
+        image = cv2.resize(gaussian_blurred, (1024, 1024))
         return Image.fromarray(image, mode='RGB')
     
 # To normalize one image [values range 0:1]
@@ -108,8 +112,8 @@ def buildLBPTransformations():
     ])
 
 # Build HOG trasformations
-def buildHOGTransformations():
+def buildHOGTransformations(ksize:Size, sigma:float):
     return transforms.Compose([
-        CustomHOGTransform(),
+        CustomHOGTransform(ksize=ksize, sigma=sigma),
         transforms.ToTensor(),          
     ])

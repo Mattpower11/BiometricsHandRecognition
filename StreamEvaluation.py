@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from CustomImageDataset import CustomImageDataset
 
-def streamEvaluation(net1:nn.Module, net2:nn.Module, transforms:list, weights_palmar_dorsal:list, data_struct:dict, image_path:str, tot_exp: int, batch_size=32):
+def streamEvaluationCNN(net1:nn.Module, net2:nn.Module, transforms:list, weights_palmar_dorsal:list, data_struct:dict, image_path:str, tot_exp: int, batch_size=32):
     # Move the model to the appropriate device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -54,3 +54,20 @@ def streamEvaluation(net1:nn.Module, net2:nn.Module, transforms:list, weights_pa
                 tot_predicted = torch.cat((tot_predicted, predicted))
 
     return tot_labels, tot_predicted
+
+
+def streamEvaluationSVC(list_prob_matrix_palmar:np.array, list_prob_matrix_dorsal:np.array, classes:np.array):
+    # Sum the probabilities of all the images
+    sum_prob_palm = np.sum(list_prob_matrix_palmar, axis=0)
+    print(sum_prob_palm)
+    sum_prob_dorsal = np.sum(list_prob_matrix_dorsal, axis=0)
+    print(sum_prob_dorsal)
+    tot_prob_matrix = sum_prob_palm * 0.6 + sum_prob_dorsal * 0.4
+    print(tot_prob_matrix)
+    print(len(np.array(classes)))
+    print(np.argmax(tot_prob_matrix, axis=1))
+    predicted = np.array(classes)[np.argmax(tot_prob_matrix, axis=1)] 
+    print(predicted)
+    return predicted
+    
+
