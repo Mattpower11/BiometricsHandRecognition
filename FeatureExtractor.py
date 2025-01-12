@@ -67,22 +67,8 @@ def extract_HOG_features(image_path: str, data_struct: dict, palmar_dorsal: str,
 
     for images, _ in data_loader:
         for image in images:
-            # Debug: Print original shape
-            print("Original IMAGE SHAPE ****** ", image.shape)
-
-            # Convert to NumPy and rearrange dimensions if needed
-            if isinstance(image, torch.Tensor):
-                image = image.permute(1, 2, 0).numpy()  # (C, H, W) -> (H, W, C)
-            elif isinstance(image, Image.Image):
-                image = np.array(image)  # Convert PIL Image to NumPy array
-
-            # Ensure the channel axis is last
-            if image.shape[0] == 3:  # (3, H, W) -> (H, W, 3)
-                image = np.transpose(image, (1, 2, 0))
-
-            # Convert to grayscale
-            image = rgb2gray(image)  # Ensures a 2D (H, W) array
-            print("After rgb2gray IMAGE SHAPE ****** ", image.shape)
+            image = np.array(image)  # Convert PIL Image to NumPy array
+            image = np.transpose(image, (1, 2, 0))
 
             # Extract HOG features
             hog_features = hog(
@@ -91,7 +77,8 @@ def extract_HOG_features(image_path: str, data_struct: dict, palmar_dorsal: str,
                 pixels_per_cell=(pixels_per_cell, pixels_per_cell),
                 cells_per_block=(cells_per_block, cells_per_block),
                 transform_sqrt=True,
-                block_norm=block_norm
+                block_norm=block_norm,
+                channel_axis=-1
             )
             features.append(hog_features)
         

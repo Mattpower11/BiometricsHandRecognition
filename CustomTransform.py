@@ -72,7 +72,7 @@ class CustomHOGTransform:
         image = np.array(pil_image, dtype=np.uint8)
        
         
-        image = cv2.resize(image, (512, 512))
+        image = cv2.resize(image, (1024, 1024))
        
         return Image.fromarray(image, mode='RGB')
     
