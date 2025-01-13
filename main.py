@@ -163,8 +163,8 @@ svcHOG_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_wei
 #svcCNN = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
 
 # Number of subjects and images
-num_sub = 5
-num_img = 10
+num_sub = 60
+num_img = 70
 threshold = 0.5
 
 # Prepare data

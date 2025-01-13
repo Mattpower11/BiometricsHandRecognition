@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -60,3 +61,17 @@ def calculate_loss_plot(train_loss):
     plt.ylabel('Loss')
     plt.legend()
     plt.show()
+
+def calculate_FAR_plot(prob_matrix: np.ndarray, threshold: int):
+    # Compute False Acceptance Rate (FAR)
+    far = prob_matrix[prob_matrix >= threshold].sum() / prob_matrix.sum()
+
+    # Plot FAR
+    plt.figure(figsize=(10, 5))
+    plt.plot(threshold, far, 'bo-', label='FAR')
+    plt.title('False Acceptance Rate')
+    plt.xlabel('Threshold')
+    plt.ylabel('FAR')
+    plt.legend()
+    plt.show()
+    
