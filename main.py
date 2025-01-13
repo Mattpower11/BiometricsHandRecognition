@@ -17,8 +17,8 @@ from StreamEvaluation import streamEvaluationSVC
 
 # Set number of experiments
 num_exp = 10
-image_path = 'D:\\Users\\Patrizio\\Desktop\\Hands'
-csv_path = 'D:\\Users\\Patrizio\\Desktop\\Patrizio\\uni\\magistrale\\Biometric Systems\\BiometricsHandRecognition\\HandInfo.csv'
+image_path = '/home/mattpower/Downloads/Hands'
+csv_path = '/home/mattpower/Documents/backup/Magistrale/Sapienza/ComputerScience/Biometrics Systems/Progetto/BiometricsHandRecognition/HandInfo.csv'
 num_train = 100
 num_test = 50
 '''
@@ -165,6 +165,7 @@ svcHOG_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_wei
 # Number of subjects and images
 num_sub = 5
 num_img = 10
+threshold = 0.5
 
 # Prepare data
 result_dict = prepare_data_SVC(csv_path=csv_path, num_img=num_img, num_sub=num_sub)
@@ -172,6 +173,7 @@ result_dict = prepare_data_SVC(csv_path=csv_path, num_img=num_img, num_sub=num_s
 # ------------------- LBP features extractor ---------------
 
 # LBP parameters
+'''
 radius = 1
 num_points = 8 * radius
 method = 'uniform'
@@ -185,8 +187,8 @@ feature_test_p = extract_LBP_features(image_path=image_path, data_struct=result_
 SVC_Training(model=svcLBP_p, train_features=feature_train_p, labels=result_dict['train']['person_id'])
 prob_matrix_LBP_p = SVC_Testing(model=svcLBP_p, test_features=feature_test_p)
 #print(f"Accuracy LBP palmar: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
-#print(prob_matrix_LBP_p)
-print(svcLBP_p.classes_)
+print(prob_matrix_LBP_p)
+#print(svcLBP_p.classes_)
 
 feature_train_d= extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
 feature_test_d = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
@@ -195,8 +197,8 @@ feature_test_d = extract_LBP_features(image_path=image_path, data_struct=result_
 SVC_Training(model=svcLBP_d, train_features=feature_train_d, labels=result_dict['train']['person_id'])
 prob_matrix_LBP_d = SVC_Testing(model=svcLBP_d, test_features=feature_test_d)
 #print(f"Accuracy LBP dorsal: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
-#print(prob_matrix_LBP_d)
-print(svcLBP_d.classes_)
+print(prob_matrix_LBP_d)
+#print(svcLBP_d.classes_)
 
 # ------------------- HOG features extractor ---------------
 # HOG parameters
@@ -230,7 +232,7 @@ predicted = streamEvaluationSVC(list_prob_matrix_palmar=list_prob_matrix_palmar,
 
 calculate_confusion_matrix(y_true=result_dict['test']['person_id'], y_pred=predicted)
 print(f"Accuracy SVC: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
-
+'''
 
 '''
 feature_train = extract_CNN_features(net=alexNet1, num_classes=num_sub, image_path=image_path, transforms=transformsCNN, train_test='train', data_struct=result_dict, palmar_dorsal='palmar', batch_size=32)
