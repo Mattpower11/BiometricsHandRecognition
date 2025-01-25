@@ -13,6 +13,7 @@ from SVCTrainingTest import SVC_Testing, SVC_Training, find_best_match, find_wei
 from StreamEvaluation import streamEvaluationCNN
 from CustomTransform import buildAlexNetTransformations, buildHOGTransformations, buildLBPTransformations, buildLeNetTransformations
 from StreamEvaluation import streamEvaluationSVC
+from utility import compute_dynamic_threshold, compute_stream_dynamic_threshold
 
 
 # Set number of experiments
@@ -163,17 +164,21 @@ svcHOG_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_wei
 #svcCNN = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
 
 # Number of subjects and images
-num_sub = 60
-num_img = 70
-threshold = 0.5
+num_sub = 20
+num_img = 10
+isClosedSet = False
+num_impostors = 2
+# threshold = 0.5 Use of dynamic threshold
+# Percentile for the dynamic threshold
+percentile = 5
 
 # Prepare data
-result_dict = prepare_data_SVC(csv_path=csv_path, num_img=num_img, num_sub=num_sub)
+result_dict = prepare_data_SVC(csv_path=csv_path, num_img=num_img, num_sub=num_sub, isClosedSet=isClosedSet, num_impostors=num_impostors)
 
 # ------------------- LBP features extractor ---------------
 
 # LBP parameters
-'''
+
 radius = 1
 num_points = 8 * radius
 method = 'uniform'
@@ -184,20 +189,28 @@ feature_test_p = extract_LBP_features(image_path=image_path, data_struct=result_
 
 
 
-SVC_Training(model=svcLBP_p, train_features=feature_train_p, labels=result_dict['train']['person_id'])
-prob_matrix_LBP_p = SVC_Testing(model=svcLBP_p, test_features=feature_test_p)
-#print(f"Accuracy LBP palmar: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
-print(prob_matrix_LBP_p)
+train_prob_matrix_LBP_p = SVC_Training(model=svcLBP_p, train_features=feature_train_p, labels=result_dict['train']['person_id'])
+
+# Calulate dynamic threshold
+threshold = compute_dynamic_threshold(train_data=feature_train_p,model=svcLBP_p, percentile=percentile)
+
+test_prob_matrix_LBP_p, predicted_labels_LBP_p = SVC_Testing(model=svcLBP_p, test_features=feature_test_p, threshold=threshold)
+print(f"Accuracy LBP palmar: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted_labels_LBP_p)}")
+#print(prob_matrix_LBP_p)
 #print(svcLBP_p.classes_)
 
 feature_train_d= extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
 feature_test_d = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
 
 
-SVC_Training(model=svcLBP_d, train_features=feature_train_d, labels=result_dict['train']['person_id'])
-prob_matrix_LBP_d = SVC_Testing(model=svcLBP_d, test_features=feature_test_d)
-#print(f"Accuracy LBP dorsal: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
-print(prob_matrix_LBP_d)
+train_prob_matrix_LBP_d = SVC_Training(model=svcLBP_d, train_features=feature_train_d, labels=result_dict['train']['person_id'])
+
+# Calulate dynamic threshold
+threshold = compute_dynamic_threshold(train_data=feature_train_d,model=svcLBP_d, percentile=percentile)
+
+test_prob_matrix_LBP_d, predicted_labels_LBP_d = SVC_Testing(model=svcLBP_d, test_features=feature_test_d, threshold=threshold)
+print(f"Accuracy LBP dorsal: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted_labels_LBP_d)}")
+#print(prob_matrix_LBP_d)
 #print(svcLBP_d.classes_)
 
 # ------------------- HOG features extractor ---------------
@@ -212,27 +225,65 @@ block_norm = 'L2-Hys'
 feature_train_p = extract_HOG_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='train', orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block, batch_size=batch_size, block_norm=block_norm, transforms=transformsHOG)
 feature_test_p = extract_HOG_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='test', orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block, batch_size=batch_size, block_norm=block_norm, transforms=transformsHOG)
 
-SVC_Training(model=svcHOG_p, train_features=feature_train_p, labels=result_dict['train']['person_id'])
-prob_matrix_HOG_p = SVC_Testing(model=svcHOG_p, test_features=feature_test_p)
-print(svcHOG_p.classes_)
+train_prob_matrix_HOG_p = SVC_Training(model=svcHOG_p, train_features=feature_train_p, labels=result_dict['train']['person_id'])
+
+# Calulate dynamic threshold
+threshold = compute_dynamic_threshold(train_data=feature_train_p,model=svcHOG_p, percentile=percentile)
+
+test_prob_matrix_HOG_p, predicted_labels_HOG_p = SVC_Testing(model=svcHOG_p, test_features=feature_test_p, threshold=threshold)
+print(f"Accuracy HOG palmar: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted_labels_HOG_p)}")
+#print(svcHOG_p.classes_)
 
 
 feature_train_d= extract_HOG_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='train', orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block, batch_size=batch_size, block_norm=block_norm, transforms=transformsHOG)
 feature_test_d = extract_HOG_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='test', orientations=orientations, pixels_per_cell=pixels_per_cell, cells_per_block=cells_per_block, batch_size=batch_size, block_norm=block_norm, transforms=transformsHOG)
 
 
-SVC_Training(model=svcHOG_d, train_features=feature_train_d, labels=result_dict['train']['person_id'])
-prob_matrix_HOG_d = SVC_Testing(model=svcHOG_d, test_features=feature_test_d)
+train_prob_matrix_HOG_d = SVC_Training(model=svcHOG_d, train_features=feature_train_d, labels=result_dict['train']['person_id'])
 
-list_prob_matrix_palmar= np.array(object=[prob_matrix_LBP_p, prob_matrix_HOG_p])
-list_prob_matrix_dorsal= np.array(object=[prob_matrix_LBP_d, prob_matrix_HOG_d])
-print(svcHOG_d.classes_)
+# Calulate dynamic threshold
+threshold = compute_dynamic_threshold(train_data=feature_train_d,model=svcHOG_d, percentile=percentile)
 
-predicted = streamEvaluationSVC(list_prob_matrix_palmar=list_prob_matrix_palmar, list_prob_matrix_dorsal=list_prob_matrix_dorsal, classes=svcHOG_d.classes_)
+test_prob_matrix_HOG_d, predicted_labels_HOG_d = SVC_Testing(model=svcHOG_d, test_features=feature_test_d, threshold=threshold)
+print(f"Accuracy HOG dorsal: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted_labels_HOG_d)}")
 
-calculate_confusion_matrix(y_true=result_dict['test']['person_id'], y_pred=predicted)
-print(f"Accuracy SVC: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
-'''
+
+# ------------------- Multibiometric system ---------------
+
+# Create the list of train probability matrices
+list_train_prob_matrix_palmar= np.array(object=[train_prob_matrix_LBP_p, train_prob_matrix_HOG_p])
+list_train_prob_matrix_dorsal= np.array(object=[train_prob_matrix_LBP_d, train_prob_matrix_HOG_d])
+
+# Calulate dynamic threshold
+threshold = compute_stream_dynamic_threshold(list_prob_matrix_palmar=list_train_prob_matrix_palmar, list_prob_matrix_dorsal=list_train_prob_matrix_dorsal, percentile=percentile)
+
+
+# Create the list of test probability matrices
+list_test_prob_matrix_palmar= np.array(object=[test_prob_matrix_LBP_p, test_prob_matrix_HOG_p])
+list_test_prob_matrix_dorsal= np.array(object=[test_prob_matrix_LBP_d, test_prob_matrix_HOG_d])
+
+predicted = streamEvaluationSVC(list_prob_matrix_palmar=list_test_prob_matrix_palmar, list_prob_matrix_dorsal=list_test_prob_matrix_dorsal, classes=svcHOG_d.classes_, threshold=threshold)
+
+
+print(f"Accuracy multibiometric system: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
+
+# ------------------ Performance evaluation -----------------
+if isClosedSet:
+    calculate_CMC_plot(rank_matrix=test_prob_matrix_LBP_p, threshold=threshold, type_feature_extractor='LBP', palm_dorsal='palmar')
+    calculate_CMC_plot(rank_matrix=test_prob_matrix_HOG_p, threshold=threshold, type_feature_extractor='HOG', palm_dorsal='palmar')
+    calculate_CMC_plot(rank_matrix=test_prob_matrix_LBP_d, threshold=threshold, type_feature_extractor='LBP', palm_dorsal='dorsal')
+    calculate_CMC_plot(rank_matrix=test_prob_matrix_HOG_d, threshold=threshold, type_feature_extror='HOG', palm_dorsal='dorsal')
+    calculate_confusion_matrix(y_true=result_dict['test']['person_id'], y_pred=predicted)
+else: 
+    calculate_FAR_plot(predicted_scores=predicted_labels_LBP_p, true_labels=result_dict['test']['person_id'], num_impostors=num_impostors, type_feature_extractor='LBP', palm_dorsal='palmar')
+    calculate_FAR_plot(predicted_scores=predicted_labels_LBP_d, true_labels=result_dict['test']['person_id'], num_impostors=num_impostors, type_feature_extractor='LBP', palm_dorsal='dorsal')
+    calculate_FAR_plot(predicted_scores=predicted_labels_HOG_p, true_labels=result_dict['test']['person_id'], num_impostors=num_impostors, type_feature_extractor='HOG', palm_dorsal='palmar')
+    calculate_FAR_plot(predicted_scores=predicted_labels_HOG_d, true_labels=result_dict['test']['person_id'], num_impostors=num_impostors, type_feature_extractor='HOG', palm_dorsal='dorsal')
+
+    calculate_FRR_plot(predicted_scores=predicted_labels_LBP_p, true_labels=result_dict['test']['person_id'], num_genuines=num_sub - num_impostors, type_feature_extractor='LBP', palm_dorsal='palmar')
+    calculate_FRR_plot(predicted_scores=predicted_labels_LBP_d, true_labels=result_dict['test']['person_id'], num_genuines=num_sub - num_impostors, type_feature_extractor='LBP', palm_dorsal='dorsal')
+    calculate_FRR_plot(predicted_scores=predicted_labels_HOG_p, true_labels=result_dict['test']['person_id'], num_genuines=num_sub - num_impostors, type_feature_extractor='HOG', palm_dorsal='palmar')
+    calculate_FRR_plot(predicted_scores=predicted_labels_HOG_d, true_labels=result_dict['test']['person_id'], num_genuines=num_sub - num_impostors, type_feature_extractor='HOG', palm_dorsal='dorsal')
 
 '''
 feature_train = extract_CNN_features(net=alexNet1, num_classes=num_sub, image_path=image_path, transforms=transformsCNN, train_test='train', data_struct=result_dict, palmar_dorsal='palmar', batch_size=32)

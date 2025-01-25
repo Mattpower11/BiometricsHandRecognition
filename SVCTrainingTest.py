@@ -15,7 +15,11 @@ def SVC_Training(model: SVC, train_features, labels):
     # Train the model
     model.fit(X_train, labels)
 
-def SVC_Testing(model: SVC, test_features):
+    train_prob =  model.predict_proba(X_train)
+
+    return train_prob
+
+def SVC_Testing(model: SVC, test_features, threshold):
     # Standardize features 
     scaler = StandardScaler() 
     X_test = scaler.fit_transform(test_features) 
@@ -23,7 +27,10 @@ def SVC_Testing(model: SVC, test_features):
     # Test the model
     prob_matrix = model.predict_proba(X_test)
 
-    return prob_matrix
+    # Predict the labels
+    predicted_labels = np.where(model.classes_[prob_matrix.argmax(axis=1)] >= threshold, model.classes_[prob_matrix.argmax(axis=1)], -1)
+
+    return prob_matrix, predicted_labels
 
 def find_weights(csv_path:str):
     # Load the data from csv metadata file

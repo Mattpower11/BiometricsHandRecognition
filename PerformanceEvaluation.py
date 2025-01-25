@@ -62,16 +62,62 @@ def calculate_loss_plot(train_loss):
     plt.legend()
     plt.show()
 
-def calculate_FAR_plot(prob_matrix: np.ndarray, threshold: int):
-    # Compute False Acceptance Rate (FAR)
-    far = prob_matrix[prob_matrix >= threshold].sum() / prob_matrix.sum()
+def calculate_FAR_plot(predicted_scores: np.ndarray, true_labels: np.ndarray, num_impostors: int, type_feature_extractor: str, palm_dorsal: str):
+    # Calcolo di FAR per diverse soglie
+    thresholds = np.linspace(0, 1, 1000)  # Soglie tra 0 e 1
+    far_values = []
 
-    # Plot FAR
+    for threshold in thresholds:
+        predicted_labels = predicted_scores >= threshold  # Etichette predette
+        false_positives = np.sum((predicted_labels == 1) & (true_labels == 0))
+        far = false_positives / num_impostors if num_impostors > 0 else 0
+        far_values.append(far)
+
+    # Creazione del grafico
+    plt.figure(figsize=(8, 6))
+    plt.plot(thresholds, far_values, label=f"{type_feature_extractor} {palm_dorsal} FAR", color='blue')
+    plt.title('False Alarm Rate (FAR) vs Threshold', fontsize=16)
+    plt.xlabel('Threshold', fontsize=14)
+    plt.ylabel('False Alarm Rate (FAR)', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.legend(fontsize=12)
+    plt.show()
+
+    
+def calculate_FRR_plot(predicted_scores: np.ndarray, true_labels: np.ndarray, num_genuines: int, type_feature_extractor: str, palm_dorsal: str):
+    # Calcolo di FAR per diverse soglie
+    thresholds = np.linspace(0, 1, 1000)  # Soglie tra 0 e 1
+    frr_values = []
+
+    for threshold in thresholds:
+        predicted_labels = predicted_scores <= threshold  # Etichette predette
+        false_negatives = np.sum((predicted_labels == 0) & (true_labels == 1))
+        frr = false_negatives / num_genuines if num_genuines > 0 else 0
+        frr_values.append(frr)
+
+    # Creazione del grafico
+    plt.figure(figsize=(8, 6))
+    plt.plot(thresholds, frr_values, label=f"{type_feature_extractor} {palm_dorsal} FRR", color='red')
+    plt.title('False Rejection Rate (FRR) vs Threshold', fontsize=16)
+    plt.xlabel('Threshold', fontsize=14)
+    plt.ylabel('False Rejection Rate (FRR)', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.legend(fontsize=12)
+    plt.show()
+
+
+
+def calculate_CMC_plot(rank_matrix: np.ndarray, type_feature_extractor: str, palm_dorsal: str):
+    # Compute Cumulative Match Characteristic (CMC)
+    cmc = np.zeros(rank_matrix.shape[1])
+    for i in range(rank_matrix.shape[1]):
+        cmc[i] = rank_matrix[:, i].sum() / rank_matrix.shape[0]
+
+    # Plot CMC
     plt.figure(figsize=(10, 5))
-    plt.plot(threshold, far, 'bo-', label='FAR')
-    plt.title('False Acceptance Rate')
-    plt.xlabel('Threshold')
-    plt.ylabel('FAR')
+    plt.plot(range(1, rank_matrix.shape[1] + 1), cmc, 'bo-', label=f"{type_feature_extractor} {palm_dorsal} CMC")
+    plt.title('Cumulative Match Characteristic')
+    plt.xlabel('Rank')
+    plt.ylabel('CMC')
     plt.legend()
     plt.show()
-    

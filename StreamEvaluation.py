@@ -56,17 +56,17 @@ def streamEvaluationCNN(net1:nn.Module, net2:nn.Module, transforms:list, weights
     return tot_labels, tot_predicted
 
 
-def streamEvaluationSVC(list_prob_matrix_palmar:np.array, list_prob_matrix_dorsal:np.array, classes:np.array):
+def streamEvaluationSVC(list_prob_matrix_palmar:np.array, list_prob_matrix_dorsal:np.array, classes:np.array, threshold:float):
     # Sum the probabilities of all the images
     sum_prob_palm = np.sum(list_prob_matrix_palmar, axis=0)
-    print(sum_prob_palm)
+    #print(sum_prob_palm)
     sum_prob_dorsal = np.sum(list_prob_matrix_dorsal, axis=0)
-    print(sum_prob_dorsal)
+    #print(sum_prob_dorsal)
     tot_prob_matrix = sum_prob_palm * 0.6 + sum_prob_dorsal * 0.4
-    print(tot_prob_matrix)
-    print(len(np.array(classes)))
-    print(np.argmax(tot_prob_matrix, axis=1))
-    predicted = np.array(classes)[np.argmax(tot_prob_matrix, axis=1)] 
+    #print(tot_prob_matrix)
+    #print(len(np.array(classes)))
+    #print(np.argmax(tot_prob_matrix, axis=1))
+    predicted = np.where(np.array(classes)[np.argmax(tot_prob_matrix, axis=1)] >= threshold, np.array(classes)[np.argmax(tot_prob_matrix, axis=1)], -1) 
     print(predicted)
     return predicted
     
