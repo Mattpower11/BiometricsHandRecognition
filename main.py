@@ -11,21 +11,20 @@ import torchvision.models.feature_extraction as feature_extraction
 from PerformanceEvaluation import *
 from SVCTrainingTest import SVC_Testing, SVC_Training, find_best_match, find_weights
 from StreamEvaluation import streamEvaluationCNN
-from CustomTransform import buildAlexNetTransformations, buildHOGTransformations, buildHistogramTransformations, buildLBPTransformations, buildLeNetTransformations
+from CustomTransform import buildAlexNetTransformations, buildHOGTransformations, buildHistogramTransformations, buildLBPTransformations, buildLeNetTransformations, buildCannyTransformations
 from StreamEvaluation import streamEvaluationSVC
 from utility import compute_dynamic_threshold, compute_stream_dynamic_threshold
 
 
 # Set number of experiments
-num_exp = 10
-image_path = '/home/mattpower/Downloads/Hands'
-csv_path = '/home/mattpower/Documents/backup/Magistrale/Sapienza/ComputerScience/Biometrics Systems/Progetto/BiometricsHandRecognition/HandInfo.csv'
-num_train = 100
-num_test = 50
+num_exp = 5
+image_path = 'D:\\Users\\Patrizio\\Desktop\\Hands'
+csv_path = 'HandInfo.csv'
+num_train = 30
+num_test = 10
 '''
 # Prepare data
 data_struct = prepare_data_CNN(csv_path=csv_path, num_exp=num_exp, num_train=num_train, num_test=num_test, action=False)
-
 
 # Create the networks
 leNet = MyLeNetCNN(num_classes=2)
@@ -161,6 +160,11 @@ transformsHistograms = [
     buildHistogramTransformations()
 ]
 
+transformCanny = [
+    buildCannyTransformations(),
+    buildCannyTransformations()
+]
+
 svcLBP_p = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced', probability=True)
 svcLBP_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced', probability=True)
 svcHOG_p = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced', probability=True)
@@ -169,8 +173,8 @@ svcHOG_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_wei
 #svcCNN = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
 
 # Number of subjects and images
-num_sub = 5
-num_img = 2
+num_sub = 10
+num_img = 10
 isClosedSet = True
 num_impostors = 2
 # threshold = 0.5 Use of dynamic threshold
@@ -188,8 +192,12 @@ radius = 1
 num_points = 8 * radius
 method = 'uniform'
 
-feature_train_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
-feature_test_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
+feature_train_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformCanny)
+feature_test_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformCanny)
+
+max_length = max(len(x) for x in feature_train_p)
+feature_train_p = [np.pad(x, (0, max_length - len(x)), 'constant') for x in feature_train_p]
+
 
 train_prob_matrix_LBP_p = SVC_Training(model=svcLBP_p, train_features=feature_train_p, labels=result_dict['train']['person_id'])
 
@@ -197,9 +205,17 @@ train_prob_matrix_LBP_p = SVC_Training(model=svcLBP_p, train_features=feature_tr
 if not isClosedSet:
     # Calulate dynamic threshold
     threshold = compute_dynamic_threshold(train_data=feature_train_p,model=svcLBP_p, percentile=percentile)
+    max_length = max(len(x) for x in feature_test_p)
+    feature_test_p = [np.pad(x, (0, max_length - len(x)), 'constant') for x in feature_test_p]
+
     test_prob_matrix_LBP_p, predicted_labels_LBP_p = SVC_Testing(model=svcLBP_p, test_features=feature_test_p, threshold=threshold)
 else:
+    max_length = max(len(x) for x in feature_test_p)
+    feature_test_p = [np.pad(x, (0, max_length - len(x)), 'constant') for x in feature_test_p]
+
+
     test_prob_matrix_LBP_p, predicted_labels_LBP_p = SVC_Testing(model=svcLBP_p, test_features=feature_test_p)
+
 
 print(f"Accuracy LBP palmar: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted_labels_LBP_p)}")
 #print(prob_matrix_LBP_p)

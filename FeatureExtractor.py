@@ -49,7 +49,7 @@ def extract_LBP_features(image_path:str, data_struct:dict, palmar_dorsal:str, tr
 
     for images, _ in data_loader:
         for image in images:
-            lbp = local_binary_pattern(np.array(image, dtype=np.int64).reshape(1200,1600), num_points, radius, method=method)       
+            lbp = local_binary_pattern(np.array(image, dtype=np.int64).reshape(150,150), num_points, radius, method=method)       
             n_bins = int(lbp.max() + 1)                  
             (hist, _) = np.histogram(lbp.ravel(), bins=np.arange(0, n_bins), range=(0, n_bins))                                                 
                             
@@ -58,6 +58,9 @@ def extract_LBP_features(image_path:str, data_struct:dict, palmar_dorsal:str, tr
             features.append(hist)
         
     return features
+
+
+
 
 def extract_HOG_features(image_path: str, data_struct: dict, palmar_dorsal: str, train_test: str, orientations: int, pixels_per_cell: int, cells_per_block: int, batch_size: int, block_norm="L2-Hys", transforms=None):
     features = []

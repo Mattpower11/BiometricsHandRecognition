@@ -3,6 +3,8 @@ import numpy as np
 from PIL import Image
 from torch import Size 
 from torchvision import transforms
+from palm_cut import get_palm_cut
+
 
 # Custom transformation for AlexNet
 class CustomAlexNetTransform:
@@ -55,34 +57,12 @@ class CustomLeNetTransform:
 
 # Custom transformation for LeNet
 class CustomLBPTransform:
-    counter = 0
     def __call__(self, pil_image):
-        # 1. Converti l'immagine in scala di grigi
-        grigio = cv2.cvtColor(np.array(pil_image), cv2.COLOR_BGR2GRAY)
-
-        # 2. Applica un filtro per ridurre il rumore
-        sfocata = cv2.GaussianBlur(grigio, (5, 5), 0)
-
-        # 3. Rileva i bordi con Canny
-        bordi = cv2.Canny(sfocata, 50, 150)
-
-        # 4. Trova i contorni
-        contorni, _ = cv2.findContours(bordi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        # 5. Trova il contorno più grande (presumibilmente quello del soggetto)
-        contorno_piu_grande = max(contorni, key=cv2.contourArea)
-
-        # 6. Estrai il rettangolo di delimitazione del contorno
-        x, y, w, h = cv2.boundingRect(contorno_piu_grande)
-
-        # 7. Ritaglia l'immagine
-        immagine_ritagliata = grigio[y:y+h, x:x+w]
-
-        immagine_ritagliata = cv2.resize(np.array(immagine_ritagliata), (1600, 1200))
-        CustomLBPTransform.counter += 1
-        cv2.imwrite(f"./img/immagine_salvata{CustomLBPTransform.counter}.png", immagine_ritagliata)
-        return immagine_ritagliata
-    
+        opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+        immagine_ritagliata = get_palm_cut(opencv_image)
+        grigio = cv2.cvtColor(immagine_ritagliata, cv2.COLOR_BGR2GRAY)
+        return Image.fromarray(grigio, mode='L')
+  
 # Custom transformation for HOG
 class CustomHOGTransform:
     def __init__(self, ksize:Size, sigma:float):
@@ -97,7 +77,16 @@ class CustomHOGTransform:
         
         image = cv2.resize(gaussian_blurred, (1024, 1024))
         return Image.fromarray(image, mode='RGB')
-    
+
+class CustomCannyTransform:
+    def __call__(self, pil_image):
+        opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+        immagine_ritagliata = get_palm_cut(opencv_image)
+        grigio = cv2.cvtColor(immagine_ritagliata, cv2.COLOR_BGR2GRAY)
+        canny = cv2.Canny(grigio, 100, 200)
+        return Image.fromarray(canny, mode='L')
+
+
 # To normalize one image [values range 0:1]
 def imageNormalization(image: np.ndarray):
     # E.g., convert from [0..255] to [0..1] float
@@ -107,6 +96,14 @@ def imageNormalization(image: np.ndarray):
 def restoreOriginalPixelValue(image: np.ndarray):
     # Convert from [0..1] float back to [0..255] uint8
     return (image * 255).astype(np.uint8)
+
+
+
+def buildCannyTransformations():
+    return transforms.Compose([
+        CustomCannyTransform(),
+        transforms.ToTensor(),          
+    ])
 
 # Build AlexNet trasformations
 def buildAlexNetTransformations():
