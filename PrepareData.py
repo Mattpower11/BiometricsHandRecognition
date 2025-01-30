@@ -232,9 +232,12 @@ def prepare_data_SVC_test(df:pd.DataFrame, dict:dict, num_img: int, isClosedSet:
     for person_id in person_id_list:
         for _ in range (0, int((num_img/100)*30)):
             
-            # If the person is an impostor, the label is -1
-            if person_id in impostor_list:
-                dict["test"]["person_id"].append(-1)
+            if not isClosedSet:
+                # If the person is an impostor, the label is -1
+                if person_id in impostor_list:
+                    dict["test"]["person_id"].append(-1)
+                else:
+                    dict["test"]["person_id"].append(person_id)
             else:
                 dict["test"]["person_id"].append(person_id)
                

@@ -55,15 +55,33 @@ class CustomLeNetTransform:
 
 # Custom transformation for LeNet
 class CustomLBPTransform:
+    counter = 0
     def __call__(self, pil_image):
-        # Convert PIL -> RGB -> NumPy
-        pil_image = pil_image.convert('RGB')
-        np_image = np.array(pil_image, dtype=np.uint8)
-        gray_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
-        # Equalize hist
-        contrast = cv2.equalizeHist(gray_image)
-        # Return PIL image (mode='L' = single channel)
-        return Image.fromarray(contrast, mode='L')
+        # 1. Converti l'immagine in scala di grigi
+        grigio = cv2.cvtColor(np.array(pil_image), cv2.COLOR_BGR2GRAY)
+
+        # 2. Applica un filtro per ridurre il rumore
+        sfocata = cv2.GaussianBlur(grigio, (5, 5), 0)
+
+        # 3. Rileva i bordi con Canny
+        bordi = cv2.Canny(sfocata, 50, 150)
+
+        # 4. Trova i contorni
+        contorni, _ = cv2.findContours(bordi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # 5. Trova il contorno più grande (presumibilmente quello del soggetto)
+        contorno_piu_grande = max(contorni, key=cv2.contourArea)
+
+        # 6. Estrai il rettangolo di delimitazione del contorno
+        x, y, w, h = cv2.boundingRect(contorno_piu_grande)
+
+        # 7. Ritaglia l'immagine
+        immagine_ritagliata = grigio[y:y+h, x:x+w]
+
+        immagine_ritagliata = cv2.resize(np.array(immagine_ritagliata), (1600, 1200))
+        CustomLBPTransform.counter += 1
+        cv2.imwrite(f"./img/immagine_salvata{CustomLBPTransform.counter}.png", immagine_ritagliata)
+        return immagine_ritagliata
     
 # Custom transformation for HOG
 class CustomHOGTransform:
@@ -115,5 +133,11 @@ def buildLBPTransformations():
 def buildHOGTransformations(ksize:Size, sigma:float):
     return transforms.Compose([
         CustomHOGTransform(ksize=ksize, sigma=sigma),
+        transforms.ToTensor(),          
+    ])
+
+# Build a histogram transformation
+def buildHistogramTransformations():
+    return transforms.Compose([
         transforms.ToTensor(),          
     ])

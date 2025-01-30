@@ -1,9 +1,12 @@
 import math
 from typing import List, Tuple
+from torch.utils.data import DataLoader
 
 import numpy as np
 import torch.nn as nn
 from scipy.ndimage import convolve1d
+
+from CustomImageDataset import CustomImageDataset
 
 def compute_dynamic_threshold(model:nn.Module ,train_data: np.ndarray, percentile: float) -> float:
     train_prob = model.predict_proba(train_data)
@@ -29,7 +32,7 @@ def compute_stream_dynamic_threshold(list_prob_matrix_palmar:np.array, list_prob
     return threshold
 
 def compute_histograms(
-    image_list: List[np.ndarray], hist_type: str, hist_isgray: bool, num_bins: int
+    dataset:CustomImageDataset, hist_type: str, hist_isgray: bool, num_bins: int
 ) -> List[np.ndarray]:
     """
     Compute the histogram for each image in image_list.
@@ -51,11 +54,15 @@ def compute_histograms(
     #ritorna la lista di istogrammi delle immagini
 
     image_hist = [] 
-    for img in image_list: 
-        #if hist_isgray:
-        #    img = rgb2gray(img)
-        hist = get_hist_by_name(img, num_bins, hist_type)
-        image_hist.append(hist)
+
+    data_loader = DataLoader(dataset, shuffle=False)
+
+    for images, _ in data_loader: 
+        for img in images:
+            #if hist_isgray:
+            #    img = rgb2gray(img)
+            hist = get_hist_by_name(img, num_bins, hist_type)
+            image_hist.append(hist) 
 
     return image_hist
 
@@ -100,7 +107,6 @@ def get_hist_by_name(img: np.ndarray, num_bins_gray: int, hist_name: str) -> np.
         return compute_gray_histogram(img, num_bins_gray, normalize=True)
     else:
         assert False, "unknown hist type: %s" % hist_name
-
 
 def compute_gray_histogram(img: np.ndarray, num_bins: int, normalize: bool = True) -> np.ndarray:
     """

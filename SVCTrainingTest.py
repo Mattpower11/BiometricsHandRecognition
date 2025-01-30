@@ -19,7 +19,7 @@ def SVC_Training(model: SVC, train_features, labels):
 
     return train_prob
 
-def SVC_Testing(model: SVC, test_features, threshold):
+def SVC_Testing(model: SVC, test_features, threshold = 0):
     # Standardize features 
     scaler = StandardScaler() 
     X_test = scaler.fit_transform(test_features) 
@@ -28,7 +28,10 @@ def SVC_Testing(model: SVC, test_features, threshold):
     prob_matrix = model.predict_proba(X_test)
 
     # Predict the labels
-    predicted_labels = np.where(model.classes_[prob_matrix.argmax(axis=1)] >= threshold, model.classes_[prob_matrix.argmax(axis=1)], -1)
+    if threshold == 0:
+        predicted_labels = model.classes_[prob_matrix.argmax(axis=1)]
+    else:
+        predicted_labels = np.where(prob_matrix.max(axis=1) >= threshold, model.classes_[prob_matrix.argmax(axis=1)], -1)
 
     return prob_matrix, predicted_labels
 
@@ -63,11 +66,13 @@ def find_weights(csv_path:str):
 
 
 def find_best_match(
-    model_images: List[np.ndarray],
-    query_images: List[np.ndarray],
     dist_type: str,
     hist_type: str,
     num_bins: int,
+    image_path: str,
+    data_struct: dict,
+    palmar_dorsal: str,
+    transforms: list,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Function to find the best match for each image in the
@@ -86,14 +91,23 @@ def find_best_match(
     """
 
     #inizializzazione della matrice D
-    D = np.zeros((len(model_images), len(query_images))) #righe = model, colonne = query
+    D = np.zeros((len(data_struct["train"]["images"]), len(data_struct["test"]["images"]))) #righe = model, colonne = query
 
     #inizializzazione della lista di best_match
     best_match = []
+    model_hist = []
+    query_hist = []
 
     #calcolo degli istogrammi
-    model_hist = compute_histograms(model_images, hist_type, is_grayvalue_hist(hist_type), num_bins)
-    query_hist = compute_histograms(query_images, hist_type, is_grayvalue_hist(hist_type), num_bins)
+    dataset = CustomImageDataset(image_dir=image_path, data_structure=data_struct, train_test="train", palmar_dorsal=palmar_dorsal, action=False, transform=transforms)
+    model_hist.append(compute_histograms(dataset, hist_type, is_grayvalue_hist(hist_type), num_bins))
+
+    print(model_hist)
+
+    dataset = CustomImageDataset(image_dir=image_path, data_structure=data_struct, train_test="test", palmar_dorsal=palmar_dorsal, action=False, transform=transforms)
+    query_hist.append(compute_histograms(dataset, hist_type, is_grayvalue_hist(hist_type), num_bins))
+
+    print(query_hist)
 
     m_hist = model_hist[0]
     q_hist = query_hist[0]
@@ -126,7 +140,6 @@ def find_best_match(
     #calcolo del best match
     for i in range(D.shape[1]): #prende le colonne
         best_match.append(np.argmin(D[:, i])) #argmin in quanto il distance based matching é basato sulla distanza minima tra i due istogrammi
-
 
     return best_match, D
 
