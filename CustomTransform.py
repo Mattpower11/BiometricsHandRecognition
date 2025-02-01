@@ -5,7 +5,6 @@ from torch import Size
 from torchvision import transforms
 from palm_cut import get_palm_cut
 
-
 # Custom transformation for AlexNet
 class CustomAlexNetTransform:
     def __call__(self, pil_image):
@@ -27,7 +26,6 @@ class CustomAlexNetTransform:
 
         # Return PIL image (mode='RGB')
         return Image.fromarray(final_8u, mode='RGB')
-
 
 # Custom transformation for LeNet
 class CustomLeNetTransform:
@@ -54,13 +52,18 @@ class CustomLeNetTransform:
         # Return PIL image (mode='L' = single channel)
         return Image.fromarray(final_8u, mode='L')
 
-
-# Custom transformation for LeNet
-class CustomLBPTransform:
+# Custom transformation for LBP
+class CustomLBPPalmCutTransform:
     def __call__(self, pil_image):
         opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
         immagine_ritagliata = get_palm_cut(opencv_image)
         grigio = cv2.cvtColor(immagine_ritagliata, cv2.COLOR_BGR2GRAY)
+        return Image.fromarray(grigio, mode='L')
+    
+# Custom transformation for LBP
+class CustomLBPTransform:
+    def __call__(self, pil_image):
+        grigio = cv2.cvtColor(np.array(pil_image), cv2.COLOR_BGR2GRAY)
         return Image.fromarray(grigio, mode='L')
   
 # Custom transformation for HOG
@@ -78,14 +81,14 @@ class CustomHOGTransform:
         image = cv2.resize(gaussian_blurred, (1024, 1024))
         return Image.fromarray(image, mode='RGB')
 
-class CustomCannyTransform:
+class CustomLBPPalmCutCannyTransform:
     def __call__(self, pil_image):
         opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
         immagine_ritagliata = get_palm_cut(opencv_image)
         grigio = cv2.cvtColor(immagine_ritagliata, cv2.COLOR_BGR2GRAY)
-        canny = cv2.Canny(grigio, 100, 200)
+        contrasto = cv2.equalizeHist(grigio)
+        canny = cv2.Canny(contrasto, 100, 200)
         return Image.fromarray(canny, mode='L')
-
 
 # To normalize one image [values range 0:1]
 def imageNormalization(image: np.ndarray):
@@ -97,39 +100,15 @@ def restoreOriginalPixelValue(image: np.ndarray):
     # Convert from [0..1] float back to [0..255] uint8
     return (image * 255).astype(np.uint8)
 
-
-
-def buildCannyTransformations():
+def buildCustomTransform(transform:type):
     return transforms.Compose([
-        CustomCannyTransform(),
+        transform(),
         transforms.ToTensor(),          
     ])
 
-# Build AlexNet trasformations
-def buildAlexNetTransformations():
+def buildCustomTransformExtended(transform:type, ksize:Size, sigma:float):
     return transforms.Compose([
-        CustomAlexNetTransform(),
-        transforms.ToTensor(),         
-    ])
-
-# Build LeNet trasformations
-def buildLeNetTransformations():
-    return transforms.Compose([
-        CustomLeNetTransform(),
-        transforms.ToTensor(),          
-    ])
-
-# Build LBP trasformations
-def buildLBPTransformations():
-    return transforms.Compose([
-        CustomLBPTransform(),
-        transforms.ToTensor(),          
-    ])
-
-# Build HOG trasformations
-def buildHOGTransformations(ksize:Size, sigma:float):
-    return transforms.Compose([
-        CustomHOGTransform(ksize=ksize, sigma=sigma),
+        transform(ksize=ksize, sigma=sigma),
         transforms.ToTensor(),          
     ])
 

@@ -1,7 +1,6 @@
 import cv2
 import mediapipe as mp
 
-
 def get_palm_cut(image):
     coordinate = []
     # Inizializza MediaPipe Hands

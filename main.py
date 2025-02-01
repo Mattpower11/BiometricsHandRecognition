@@ -11,14 +11,14 @@ import torchvision.models.feature_extraction as feature_extraction
 from PerformanceEvaluation import *
 from SVCTrainingTest import SVC_Testing, SVC_Training, find_best_match, find_weights
 from StreamEvaluation import streamEvaluationCNN
-from CustomTransform import buildAlexNetTransformations, buildHOGTransformations, buildHistogramTransformations, buildLBPTransformations, buildLeNetTransformations, buildCannyTransformations
+from CustomTransform import CustomAlexNetTransform, CustomHOGTransform, CustomLBPPalmCutCannyTransform, CustomLBPTransform, buildCustomTransform, buildCustomTransformExtended, buildHistogramTransformations
 from StreamEvaluation import streamEvaluationSVC
 from utility import compute_dynamic_threshold, compute_stream_dynamic_threshold
 
 
 # Set number of experiments
 num_exp = 5
-image_path = 'D:\\Users\\Patrizio\\Desktop\\Hands'
+image_path = '/home/mattpower/Downloads/Hands'
 csv_path = 'HandInfo.csv'
 num_train = 30
 num_test = 10
@@ -140,29 +140,28 @@ print("F1 Score Unified Network: ", calculate_f1_score(y_true=un_labels, y_pred=
 
 
 transformsLBP = [
-    buildLBPTransformations(),
-    buildLBPTransformations()
+    buildCustomTransform(transform=CustomLBPPalmCutCannyTransform),
+    buildCustomTransform(transform=CustomLBPTransform),
 ]
 
 transformsHOG = [
-    
-    buildHOGTransformations(ksize=(5,5), sigma=1.0),
-    buildHOGTransformations(ksize=(5,5), sigma=1.0)
+    buildCustomTransformExtended(transform=CustomHOGTransform, ksize=(3,3), sigma=1),
+    buildCustomTransformExtended(transform=CustomHOGTransform, ksize=(3,3), sigma=1)
 ]
 
 transformsCNN = [
-    buildAlexNetTransformations(),
-    buildAlexNetTransformations()
-]
-
+    buildCustomTransform(transform=CustomAlexNetTransform),
+    buildCustomTransform(transform=CustomAlexNetTransform)
+]                        
+                
 transformsHistograms = [
     buildHistogramTransformations(),
     buildHistogramTransformations()
 ]
 
 transformCanny = [
-    buildCannyTransformations(),
-    buildCannyTransformations()
+    buildCustomTransform(transform=CustomLBPPalmCutCannyTransform),
+    buildCustomTransform(transform=CustomLBPPalmCutCannyTransform)
 ]
 
 svcLBP_p = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced', probability=True)
