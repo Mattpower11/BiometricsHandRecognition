@@ -159,11 +159,6 @@ transformsHistograms = [
     buildHistogramTransformations()
 ]
 
-transformCanny = [
-    buildCustomTransform(transform=CustomLBPPalmCutCannyTransform),
-    buildCustomTransform(transform=CustomLBPPalmCutCannyTransform)
-]
-
 svcLBP_p = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced', probability=True)
 svcLBP_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced', probability=True)
 svcHOG_p = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced', probability=True)
@@ -191,8 +186,8 @@ radius = 1
 num_points = 8 * radius
 method = 'uniform'
 
-feature_train_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformCanny)
-feature_test_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformCanny)
+feature_train_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
+feature_test_p = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='palmar', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
 
 max_length = max(len(x) for x in feature_train_p)
 feature_train_p = [np.pad(x, (0, max_length - len(x)), 'constant') for x in feature_train_p]

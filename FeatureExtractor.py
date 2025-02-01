@@ -49,7 +49,11 @@ def extract_LBP_features(image_path:str, data_struct:dict, palmar_dorsal:str, tr
 
     for images, _ in data_loader:
         for image in images:
-            lbp = local_binary_pattern(np.array(image, dtype=np.int64).reshape(150,150), num_points, radius, method=method)       
+            if palmar_dorsal == 'dorsal':
+                lbp = local_binary_pattern(np.array(image, dtype=np.int64).reshape(1600,1200), num_points, radius, method=method) 
+            else:
+                lbp = local_binary_pattern(np.array(image, dtype=np.int64).reshape(150,150), num_points, radius, method=method) 
+                     
             n_bins = int(lbp.max() + 1)                  
             (hist, _) = np.histogram(lbp.ravel(), bins=np.arange(0, n_bins), range=(0, n_bins))                                                 
                             
