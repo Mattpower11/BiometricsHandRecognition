@@ -87,7 +87,7 @@ class CustomLBPPalmCutCannyTransform:
         immagine_ritagliata = get_palm_cut(opencv_image)
         grigio = cv2.cvtColor(immagine_ritagliata, cv2.COLOR_BGR2GRAY)
         contrasto = cv2.equalizeHist(grigio)
-        canny = cv2.Canny(contrasto, 100, 200)
+        canny = cv2.Canny(contrasto, 50, 200, apertureSize=7, L2gradient = True)
         return Image.fromarray(canny, mode='L')
 
 # To normalize one image [values range 0:1]

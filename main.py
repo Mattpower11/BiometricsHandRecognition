@@ -18,7 +18,7 @@ from utility import compute_dynamic_threshold, compute_stream_dynamic_threshold
 
 # Set number of experiments
 num_exp = 5
-image_path = '/home/mattpower/Downloads/Hands'
+image_path = 'D:\\Users\\Patrizio\\Desktop\\Hands'
 csv_path = 'HandInfo.csv'
 num_train = 30
 num_test = 10
@@ -167,8 +167,8 @@ svcHOG_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_wei
 #svcCNN = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
 
 # Number of subjects and images
-num_sub = 10
-num_img = 10
+num_sub = 20
+num_img = 20
 isClosedSet = True
 num_impostors = 2
 # threshold = 0.5 Use of dynamic threshold
@@ -215,6 +215,8 @@ print(f"Accuracy LBP palmar: {calculate_accuracy(y_true=result_dict['test']['per
 #print(prob_matrix_LBP_p)
 #print(svcLBP_p.classes_)
 
+
+
 feature_train_d= extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='train', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
 feature_test_d = extract_LBP_features(image_path=image_path, data_struct=result_dict, palmar_dorsal='dorsal', train_test='test', num_points=num_points, radius=radius, method=method, batch_size=32, transforms=transformsLBP)
 
@@ -229,6 +231,8 @@ else:
     test_prob_matrix_LBP_d, predicted_labels_LBP_d = SVC_Testing(model=svcLBP_d, test_features=feature_test_d)
 
 print(f"Accuracy LBP dorsal: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted_labels_LBP_d)}")
+
+
 #print(prob_matrix_LBP_d)
 #print(svcLBP_d.classes_)
 
