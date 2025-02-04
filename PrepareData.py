@@ -147,18 +147,19 @@ def prepare_data_CNN_test(num_test: int, df: pd.DataFrame, extracted_person_id_l
 def prepare_data_SVC(csv_path:str, num_sub:int, num_img:int, isClosedSet:bool=True, num_impostors:int=0):
     df = pd.read_csv(csv_path)
 
+    person_id_list = np.random.choice(df['id'].unique(), size=num_sub, replace=False)
+
     result_dict = {
         "train": None,
         "test": None
     }    
-    result_dict["train"], df = prepare_data_SVC_train(df, num_sub, num_img)
-    prepare_data_SVC_test(df, result_dict, num_img, isClosedSet, num_impostors)
+    result_dict["train"], df = prepare_data_SVC_train(df, person_id_list, num_img)
+    result_dict["test"] = prepare_data_SVC_test(df, person_id_list, num_img, isClosedSet, num_impostors)
     return result_dict
 
-def prepare_data_SVC_train(df:pd.DataFrame, num_sub:int, num_img: int):
+def prepare_data_SVC_train(df:pd.DataFrame, person_id_list:list, num_img: int):
     result_dict = {
         "person_id": [],
-        #"side": [],num_sub
         "images": []
     }    
     '''
@@ -191,14 +192,13 @@ def prepare_data_SVC_train(df:pd.DataFrame, num_sub:int, num_img: int):
     '''
     # Creiamo un campo check per sapere se un'immagine è stata già presa    
     df['check'] = False
-    person_id_list = np.random.choice(df['id'].unique(), size=num_sub, replace=False)
 
     #print(set(person_id_list))
     
     print("Prepare data train")
     # costruiamo un df con id persona e numero di immagini e tagliamo su quello
     for person_id in person_id_list:
-        for _ in range (0, int((num_img/100)*70)):
+        for _ in range (0, int((num_img/100)*80)):
             result_dict["person_id"].append(person_id)                
             palmar_img = df.loc[(df["id"] == person_id)&(df["aspectOfHand"].str.contains("palmar")),'imageName'].sample(n=1, replace=False).to_list()
             dorsal_img = df.loc[(df["id"] == person_id)&(df["aspectOfHand"].str.contains("dorsal")),'imageName'].sample(n=1, replace=False).to_list()
@@ -212,38 +212,36 @@ def prepare_data_SVC_train(df:pd.DataFrame, num_sub:int, num_img: int):
     print("Fine prepare data train")
     return result_dict, df
 
-def prepare_data_SVC_test(df:pd.DataFrame, dict:dict, num_img: int, isClosedSet:bool=True, num_impostors:int=0):
-    if isClosedSet or num_impostors == 0:
-        person_id_list = set( dict["train"]["person_id"] )
-    else:
-        person_id_list = np.random.choice(dict["train"]["person_id"], size=len(dict["train"]["person_id"])-num_impostors, replace=False).tolist()
+
+def prepare_data_SVC_test(df:pd.DataFrame, person_id_list:list, num_img: int, isClosedSet:bool=True, num_impostors:int=0):
+    if not isClosedSet and num_impostors != 0:
+        person_id_list = np.random.choice(person_id_list, size=len(person_id_list)-num_impostors, replace=False).tolist()
         impostor_list = list(set(df['id'].unique()) - set(person_id_list))
         person_id_list.extend(np.random.choice(impostor_list, size=num_impostors, replace=False).tolist())
     
-    dict["test"] = {
+    dict = {
         "person_id": [],
         "images": []
     }  
 
-    #print(set(person_id_list))
-
     print("Prepare data test")
     # costruiamo un df con id persona e numero di immagini e tagliamo su quello
     for person_id in person_id_list:
-        for _ in range (0, int((num_img/100)*30)):
-            
+        for _ in range (0, num_img - int((num_img/100)*80)):        
             if not isClosedSet:
                 # If the person is an impostor, the label is -1
                 if person_id in impostor_list:
-                    dict["test"]["person_id"].append(-1)
+                    dict["person_id"].append(-1)
                 else:
-                    dict["test"]["person_id"].append(person_id)
+                    dict["person_id"].append(person_id)
             else:
-                dict["test"]["person_id"].append(person_id)
+                dict["person_id"].append(person_id)
                
             palmar_img = df.loc[(df["id"] == person_id)&(df["aspectOfHand"].str.contains("palmar")),'imageName'].sample(n=1, replace=False).to_list()
             dorsal_img = df.loc[(df["id"] == person_id)&(df["aspectOfHand"].str.contains("dorsal")),'imageName'].sample(n=1, replace=False).to_list()
             #result_dict["side"].append(["palmar", "dorsal"])
-            dict["test"]["images"].append([palmar_img[0], dorsal_img[0]])
+            dict["images"].append([palmar_img[0], dorsal_img[0]])
             
     print("Fine prepare data test")
+
+    return dict

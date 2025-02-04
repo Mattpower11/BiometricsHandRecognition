@@ -62,15 +62,32 @@ def calculate_loss_plot(train_loss):
     plt.legend()
     plt.show()
 
-def calculate_FAR_plot(predicted_scores: np.ndarray, true_labels: np.ndarray, num_impostors: int, type_feature_extractor: str, palm_dorsal: str):
+def calculate_FAR_plot(predicted_scores: np.ndarray, true_labels: np.ndarray, num_impostor_images: int, type_feature_extractor: str, palm_dorsal: str):
+    # Normalizzazione delle etichette: 1 = genuine, 0 = impostor
+    true_labels_binary = np.where(true_labels != -1, 1, 0)
+    predicted_score = np.max(predicted_scores, axis=1)
+
+    # Debug: Verifica dei dati iniziali
+    #print(f"Numero di genuine: {np.sum(true_labels_binary == 1)}")
+    #print(f"Numero di impostori: {np.sum(true_labels_binary == 0)} (Dovrebbe corrispondere a num_impostors: {num_impostor_images})")
+
     # Calcolo di FAR per diverse soglie
     thresholds = np.linspace(0, 1, 1000)  # Soglie tra 0 e 1
     far_values = []
 
+
     for threshold in thresholds:
-        predicted_labels = predicted_scores >= threshold  # Etichette predette
-        false_positives = np.sum((predicted_labels == 1) & (true_labels == 0))
-        far = false_positives / num_impostors if num_impostors > 0 else 0
+        predicted_label_per_threshold = predicted_score >= threshold 
+
+        # Debug: Controlla quante predizioni sono 1 (accettate)
+        #print(f"Soglia: {threshold:.3f}, Numero di accettati: {np.sum(predicted_labels)}")
+
+        false_positives = np.sum((predicted_label_per_threshold == 1) & (true_labels_binary == 0))
+
+        # Debug: Controlla se ci sono falsi positivi
+        #print(f"False positives per soglia {threshold:.3f}: {false_positives}")
+
+        far = false_positives / num_impostor_images if num_impostor_images > 0 else 0
         far_values.append(far)
 
     # Creazione del grafico
@@ -84,15 +101,31 @@ def calculate_FAR_plot(predicted_scores: np.ndarray, true_labels: np.ndarray, nu
     plt.show()
 
     
-def calculate_FRR_plot(predicted_scores: np.ndarray, true_labels: np.ndarray, num_genuines: int, type_feature_extractor: str, palm_dorsal: str):
-    # Calcolo di FAR per diverse soglie
+def calculate_FRR_plot(predicted_scores: np.ndarray, true_labels: np.ndarray, num_genuine_images: int, type_feature_extractor: str, palm_dorsal: str):
+    # Normalizzazione delle etichette: 1 = genuine, 0 = impostor
+    true_labels_binary = np.where(true_labels != -1, 1, 0)
+    predicted_score = np.max(predicted_scores, axis=1)
+
+    # Debug: Verifica dei dati iniziali
+    #print(f"Numero di genuine: {np.sum(true_labels_binary == 1)} (Dovrebbe corrispondere a num_genuines: {num_genuine_images})")
+    #print(f"Numero di impostori: {np.sum(true_labels_binary == 0)}")
+
+    # Calcolo di FRR per diverse soglie
     thresholds = np.linspace(0, 1, 1000)  # Soglie tra 0 e 1
     frr_values = []
 
     for threshold in thresholds:
-        predicted_labels = predicted_scores <= threshold  # Etichette predette
-        false_negatives = np.sum((predicted_labels == 0) & (true_labels == 1))
-        frr = false_negatives / num_genuines if num_genuines > 0 else 0
+        predicted_label_per_threshold = predicted_score >= threshold  # Etichette predette
+
+        # Debug: Controlla quante predizioni sono 0 (rifiutati)
+        #print(f"Soglia: {threshold:.3f}, Numero di rifiutati: {np.sum(predicted_labels == 0)}")
+
+        false_negatives = np.sum((predicted_label_per_threshold == 0) & (true_labels_binary == 1))
+
+        # Debug: Controlla se ci sono falsi negativi
+        #print(f"False negatives per soglia {threshold:.3f}: {false_negatives}")
+
+        frr = false_negatives / num_genuine_images if num_genuine_images > 0 else 0
         frr_values.append(frr)
 
     # Creazione del grafico

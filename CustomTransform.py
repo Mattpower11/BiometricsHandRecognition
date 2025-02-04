@@ -3,7 +3,6 @@ import numpy as np
 from PIL import Image
 from torch import Size 
 from torchvision import transforms
-from palm_cut import get_palm_cut
 
 # Custom transformation for AlexNet
 class CustomAlexNetTransform:
@@ -51,14 +50,6 @@ class CustomLeNetTransform:
 
         # Return PIL image (mode='L' = single channel)
         return Image.fromarray(final_8u, mode='L')
-
-# Custom transformation for LBP
-class CustomLBPPalmCutTransform:
-    def __call__(self, pil_image):
-        opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-        immagine_ritagliata = get_palm_cut(opencv_image)
-        grigio = cv2.cvtColor(immagine_ritagliata, cv2.COLOR_BGR2GRAY)
-        return Image.fromarray(grigio, mode='L')
     
 # Custom transformation for LBP
 class CustomLBPTransform:
@@ -77,15 +68,41 @@ class CustomHOGTransform:
         image = pil_image.convert('RGB')
         image = np.array(pil_image, dtype=np.uint8)
         gaussian_blurred = cv2.GaussianBlur(image, self.ksize, self.sigma) 
-        
         image = cv2.resize(gaussian_blurred, (1024, 1024))
         return Image.fromarray(image, mode='RGB')
 
-class CustomLBPPalmCutCannyTransform:
+# Custom transformation for HOG
+class CustomHOGCannyTransform:
+    def __init__(self, ksize:Size, sigma:float):
+        self.ksize=ksize
+        self.sigma=sigma
+
     def __call__(self, pil_image):
-        opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-        immagine_ritagliata = get_palm_cut(opencv_image)
-        grigio = cv2.cvtColor(immagine_ritagliata, cv2.COLOR_BGR2GRAY)
+        # Converti in spazio colore LAB
+        lab = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2LAB)
+
+        # Separazione dei canali
+        l, a, b = cv2.split(lab)
+
+        # Applica CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        l_enhanced = clahe.apply(l)
+
+        # Ricombina i canali
+        lab_enhanced = cv2.merge((l_enhanced, a, b))
+
+        # Converti di nuovo in RGB
+        image_enhanced = cv2.cvtColor(lab_enhanced, cv2.COLOR_LAB2RGB)
+
+        grigio = cv2.cvtColor(image_enhanced, cv2.COLOR_RGB2GRAY)
+        canny = cv2.Canny(grigio, 50, 200, apertureSize=7, L2gradient = True)
+        image = cv2.resize(canny, (1024, 1024))
+        final_image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        return Image.fromarray(final_image, mode='RGB')
+
+class CustomLBPCannyTransform:
+    def __call__(self, pil_image):
+        grigio = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2GRAY)
         contrasto = cv2.equalizeHist(grigio)
         canny = cv2.Canny(contrasto, 50, 200, apertureSize=7, L2gradient = True)
         return Image.fromarray(canny, mode='L')
