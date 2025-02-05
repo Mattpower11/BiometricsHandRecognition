@@ -144,7 +144,7 @@ def prepare_data_CNN_test(num_test: int, df: pd.DataFrame, extracted_person_id_l
     return result_dict
 
 # Prepare data for subject identification
-def prepare_data_SVC(csv_path:str, num_sub:int, num_img:int, isClosedSet:bool=True, num_impostors:int=0):
+def prepare_data_SVC(csv_path:str, num_sub:int, num_img:int, isClosedSet:bool=True, num_impostors:int=0, perc_test:float=0.2):
     df = pd.read_csv(csv_path)
 
     person_id_list = np.random.choice(df['id'].unique(), size=num_sub, replace=False)
@@ -153,11 +153,11 @@ def prepare_data_SVC(csv_path:str, num_sub:int, num_img:int, isClosedSet:bool=Tr
         "train": None,
         "test": None
     }    
-    result_dict["train"], df = prepare_data_SVC_train(df, person_id_list, num_img)
+    result_dict["train"], df = prepare_data_SVC_train(df, person_id_list, num_img, perc_test)
     result_dict["test"] = prepare_data_SVC_test(df, person_id_list, num_img, isClosedSet, num_impostors)
     return result_dict
 
-def prepare_data_SVC_train(df:pd.DataFrame, person_id_list:list, num_img: int):
+def prepare_data_SVC_train(df:pd.DataFrame, person_id_list:list, num_img: int, perc_test:float=0.2):
     result_dict = {
         "person_id": [],
         "images": []
@@ -198,7 +198,7 @@ def prepare_data_SVC_train(df:pd.DataFrame, person_id_list:list, num_img: int):
     print("Prepare data train")
     # costruiamo un df con id persona e numero di immagini e tagliamo su quello
     for person_id in person_id_list:
-        for _ in range (0, int((num_img/100)*80)):
+        for _ in range (0, int(num_img - (num_img*perc_test))):
             result_dict["person_id"].append(person_id)                
             palmar_img = df.loc[(df["id"] == person_id)&(df["aspectOfHand"].str.contains("palmar")),'imageName'].sample(n=1, replace=False).to_list()
             dorsal_img = df.loc[(df["id"] == person_id)&(df["aspectOfHand"].str.contains("dorsal")),'imageName'].sample(n=1, replace=False).to_list()
@@ -213,7 +213,7 @@ def prepare_data_SVC_train(df:pd.DataFrame, person_id_list:list, num_img: int):
     return result_dict, df
 
 
-def prepare_data_SVC_test(df:pd.DataFrame, person_id_list:list, num_img: int, isClosedSet:bool=True, num_impostors:int=0):
+def prepare_data_SVC_test(df:pd.DataFrame, person_id_list:list, num_img: int, isClosedSet:bool=True, num_impostors:int=0, perc_test:float=0.2):
     if not isClosedSet and num_impostors != 0:
         person_id_list = np.random.choice(person_id_list, size=len(person_id_list)-num_impostors, replace=False).tolist()
         impostor_list = list(set(df['id'].unique()) - set(person_id_list))
@@ -227,7 +227,7 @@ def prepare_data_SVC_test(df:pd.DataFrame, person_id_list:list, num_img: int, is
     print("Prepare data test")
     # costruiamo un df con id persona e numero di immagini e tagliamo su quello
     for person_id in person_id_list:
-        for _ in range (0, num_img - int((num_img/100)*80)):        
+        for _ in range (0, int(num_img*perc_test)):        
             if not isClosedSet:
                 # If the person is an impostor, the label is -1
                 if person_id in impostor_list:

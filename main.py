@@ -168,9 +168,10 @@ svcHOG_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_wei
 
 # Number of subjects and images
 num_sub = 40
-num_img = 30
-isClosedSet = True
+num_img = 10
+isClosedSet = False
 num_impostors = 10
+perc_test_data = 0.2
 # threshold = 0.5 Use of dynamic threshold
 # Percentile for the dynamic threshold
 percentile = 5
@@ -296,17 +297,21 @@ else:
 print(f"Accuracy multibiometric system: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
 
 # ------------------ Performance evaluation -----------------
+true_labels = np.array(result_dict['test']['person_id'])
+gallery_labels = np.array(result_dict['test']['person_id'])[np.array(result_dict['test']['person_id']) != -1]
+
 if isClosedSet:
-    calculate_CMC_plot(rank_matrix=test_prob_matrix_LBP_p, type_feature_extractor='LBP', palm_dorsal='palmar')
-    calculate_CMC_plot(rank_matrix=test_prob_matrix_HOG_p, type_feature_extractor='HOG', palm_dorsal='palmar')
-    calculate_CMC_plot(rank_matrix=test_prob_matrix_LBP_d, type_feature_extractor='LBP', palm_dorsal='dorsal')
-    calculate_CMC_plot(rank_matrix=test_prob_matrix_HOG_d, type_feature_extractor='HOG', palm_dorsal='dorsal')
-    calculate_confusion_matrix(y_true=result_dict['test']['person_id'], y_pred=predicted)
+    calculate_CMC_plot(score_matrix=test_prob_matrix_LBP_p, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='LBP', palm_dorsal='palmar')
+    calculate_CMC_plot(score_matrix=test_prob_matrix_HOG_p, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='HOG', palm_dorsal='palmar')
+    calculate_CMC_plot(score_matrix=test_prob_matrix_LBP_d, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='LBP', palm_dorsal='dorsal')
+    calculate_CMC_plot(score_matrix=test_prob_matrix_HOG_d, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='HOG', palm_dorsal='dorsal')
+    
+
+    calculate_confusion_matrix(y_true=true_labels, y_pred=predicted)   
 else: 
     #print(result_dict['test']['person_id'])
-
-    num_impostor_images = (num_img - int((num_img/100)*70)) * num_impostors
-    num_genuine_images = (num_img - int((num_img/100)*70)) * (num_sub - num_impostors)
+    num_impostor_images = (num_img - int((num_img/100)*80)) * num_impostors
+    num_genuine_images = (num_img - int((num_img/100)*80)) * (num_sub - num_impostors)
 
     #print(result_dict['test']['person_id'])
     #print(result_dict['test']['images'])
@@ -323,6 +328,11 @@ else:
     calculate_FRR_plot(predicted_scores=test_prob_matrix_HOG_p, true_labels=np.array(result_dict['test']['person_id']), num_genuine_images=num_genuine_images, type_feature_extractor='HOG', palm_dorsal='palmar')
     calculate_FRR_plot(predicted_scores=test_prob_matrix_HOG_d, true_labels=np.array(result_dict['test']['person_id']), num_genuine_images=num_genuine_images, type_feature_extractor='HOG', palm_dorsal='dorsal')
     
+    plot_OSROC_curve(predicted_scores=test_prob_matrix_LBP_p, true_labels=true_labels, known_classes=gallery_labels, type_feature_extractor='LBP', palm_dorsal='palmar')
+    plot_OSROC_curve(predicted_scores=test_prob_matrix_HOG_p, true_labels=true_labels, known_classes=gallery_labels, type_feature_extractor='HOG', palm_dorsal='palmar')
+    plot_OSROC_curve(predicted_scores=test_prob_matrix_LBP_d, true_labels=true_labels, known_classes=gallery_labels, type_feature_extractor='LBP', palm_dorsal='dorsal')
+    plot_OSROC_curve(predicted_scores=test_prob_matrix_HOG_d, true_labels=true_labels, known_classes=gallery_labels, type_feature_extractor='HOG', palm_dorsal='dorsal')   
+
 '''
 feature_train = extract_CNN_features(net=alexNet1, num_classes=num_sub, image_path=image_path, transforms=transformsCNN, train_test='train', data_struct=result_dict, palmar_dorsal='palmar', batch_size=32)
 feature_test = extract_CNN_features(net=alexNet1, num_classes=num_sub, image_path=image_path, transforms=transformsCNN, train_test='test', data_struct=result_dict, palmar_dorsal='palmar', batch_size=32)
