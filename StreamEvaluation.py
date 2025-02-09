@@ -70,7 +70,7 @@ def streamEvaluationSVC(list_prob_matrix_palmar:np.array, list_prob_matrix_dorsa
         predicted = classes[np.argmax(tot_prob_matrix, axis=1)]
     else:
         predicted = np.where(tot_prob_matrix.max(axis=1) >= threshold, classes[np.argmax(tot_prob_matrix, axis=1)], -1) 
-    print(predicted)
+    #print(predicted)
     return predicted
     
 

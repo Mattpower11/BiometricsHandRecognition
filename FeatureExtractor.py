@@ -64,8 +64,6 @@ def extract_LBP_features(image_path:str, data_struct:dict, palmar_dorsal:str, tr
     return features
 
 
-
-
 def extract_HOG_features(image_path: str, data_struct: dict, palmar_dorsal: str, train_test: str, orientations: int, pixels_per_cell: int, cells_per_block: int, batch_size: int, block_norm="L2-Hys", transforms=None):
     features = []
 

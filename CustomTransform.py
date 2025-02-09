@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 from torch import Size 
 from torchvision import transforms
-from palm_cut import get_palm_cut
+
 
 # Custom transformation for AlexNet
 class CustomAlexNetTransform:
@@ -52,20 +52,7 @@ class CustomLeNetTransform:
         # Return PIL image (mode='L' = single channel)
         return Image.fromarray(final_8u, mode='L')
 
-# Custom transformation for LBP
-class CustomLBPPalmCutTransform:
-    def __call__(self, pil_image):
-        opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-        immagine_ritagliata = get_palm_cut(opencv_image)
-        grigio = cv2.cvtColor(immagine_ritagliata, cv2.COLOR_BGR2GRAY)
-        return Image.fromarray(grigio, mode='L')
     
-# Custom transformation for LBP
-class CustomLBPTransform:
-    def __call__(self, pil_image):
-        grigio = cv2.cvtColor(np.array(pil_image), cv2.COLOR_BGR2GRAY)
-        return Image.fromarray(grigio, mode='L')
-  
 # Custom transformation for HOG
 class CustomHOGTransform:
     def __init__(self, ksize:Size, sigma:float):
@@ -80,13 +67,28 @@ class CustomHOGTransform:
         
         image = cv2.resize(gaussian_blurred, (1024, 1024))
         return Image.fromarray(image, mode='RGB')
+    
+# Custom transformation for LBP
+class CustomLBPTransform:
+    def __init__(self, isPalm:bool=False):
+        self.isPalm = isPalm
 
-class CustomLBPPalmCutCannyTransform:
-    def __call__(self, pil_image):
-        opencv_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-        immagine_ritagliata = get_palm_cut(opencv_image)
-        grigio = cv2.cvtColor(immagine_ritagliata, cv2.COLOR_BGR2GRAY)
-        contrasto = cv2.equalizeHist(grigio)
+    def __call__(self, image):
+        if self.isPalm:
+            image = cv2.resize(np.array(image), (150, 150))
+        grigio = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2GRAY)
+        contrasto = cv2.equalizeHist(np.array(grigio))
+        return Image.fromarray(contrasto, mode='L')
+
+class CustomLBPCannyTransform:
+    def __init__(self, isPalm:bool=False):
+        self.isPalm = isPalm
+
+    def __call__(self, image):
+        if self.isPalm:
+            image = cv2.resize(np.array(image), (150, 150))
+        grigio = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+        contrasto = cv2.equalizeHist(np.array(grigio))
         canny = cv2.Canny(contrasto, 50, 200, apertureSize=7, L2gradient = True)
         return Image.fromarray(canny, mode='L')
 
@@ -106,11 +108,18 @@ def buildCustomTransform(transform:type):
         transforms.ToTensor(),          
     ])
 
-def buildCustomTransformExtended(transform:type, ksize:Size, sigma:float):
+def buildCustomTransformHogExtended(transform:type, ksize:Size, sigma:float):
     return transforms.Compose([
         transform(ksize=ksize, sigma=sigma),
         transforms.ToTensor(),          
     ])
+
+def buildCustomTransformPalmExtended(transform:type, isPalm:bool):
+    return transforms.Compose([
+        transform(isPalm=isPalm),
+        transforms.ToTensor(),          
+    ])
+
 
 # Build a histogram transformation
 def buildHistogramTransformations():

@@ -11,14 +11,14 @@ import torchvision.models.feature_extraction as feature_extraction
 from PerformanceEvaluation import *
 from SVCTrainingTest import SVC_Testing, SVC_Training, find_best_match, find_weights
 from StreamEvaluation import streamEvaluationCNN
-from CustomTransform import CustomAlexNetTransform, CustomHOGTransform, CustomLBPPalmCutCannyTransform, CustomLBPTransform, buildCustomTransform, buildCustomTransformExtended, buildHistogramTransformations
+from CustomTransform import CustomAlexNetTransform, CustomHOGTransform, CustomLBPCannyTransform, CustomLBPTransform, buildCustomTransform, buildCustomTransformHogExtended, buildCustomTransformPalmExtended, buildHistogramTransformations
 from StreamEvaluation import streamEvaluationSVC
 from utility import compute_dynamic_threshold, compute_stream_dynamic_threshold
 
 
 # Set number of experiments
 num_exp = 5
-image_path = 'D:\\Users\\Patrizio\\Desktop\\Hands'
+image_path = '/home/mattpower/Downloads/PalmCutHands'
 csv_path = 'HandInfo.csv'
 num_train = 30
 num_test = 10
@@ -140,13 +140,13 @@ print("F1 Score Unified Network: ", calculate_f1_score(y_true=un_labels, y_pred=
 
 
 transformsLBP = [
-    buildCustomTransform(transform=CustomLBPPalmCutCannyTransform),
+    buildCustomTransformPalmExtended(transform=CustomLBPCannyTransform, isPalm=True),
     buildCustomTransform(transform=CustomLBPTransform),
 ]
 
 transformsHOG = [
-    buildCustomTransformExtended(transform=CustomHOGTransform, ksize=(3,3), sigma=1),
-    buildCustomTransformExtended(transform=CustomHOGTransform, ksize=(3,3), sigma=1)
+    buildCustomTransformHogExtended(transform=CustomHOGTransform, ksize=(3,3), sigma=1),
+    buildCustomTransformHogExtended(transform=CustomHOGTransform, ksize=(3,3), sigma=1)
 ]
 
 transformsCNN = [
@@ -167,10 +167,10 @@ svcHOG_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_wei
 #svcCNN = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_weight='balanced')
 
 # Number of subjects and images
-num_sub = 20
-num_img = 20
-isClosedSet = True
-num_impostors = 2
+num_sub = 15
+num_img = 10
+isClosedSet = False
+num_impostors = 4
 # threshold = 0.5 Use of dynamic threshold
 # Percentile for the dynamic threshold
 percentile = 5
@@ -238,7 +238,7 @@ print(f"Accuracy LBP dorsal: {calculate_accuracy(y_true=result_dict['test']['per
 
 # ------------------- HOG features extractor ---------------
 # HOG parameters
-'''
+
 orientations = 9
 pixels_per_cell = 16
 cells_per_block = 1
@@ -297,24 +297,36 @@ else:
 print(f"Accuracy multibiometric system: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
 
 # ------------------ Performance evaluation -----------------
+
+#print(result_dict['test']['person_id'])
+
+true_labels = np.array(result_dict['test']['person_id'])
+gallery_labels = np.unique(np.array(result_dict['test']['person_id']))
+
 if isClosedSet:
-    calculate_CMC_plot(rank_matrix=test_prob_matrix_LBP_p, type_feature_extractor='LBP', palm_dorsal='palmar')
-    calculate_CMC_plot(rank_matrix=test_prob_matrix_HOG_p, type_feature_extractor='HOG', palm_dorsal='palmar')
-    calculate_CMC_plot(rank_matrix=test_prob_matrix_LBP_d, type_feature_extractor='LBP', palm_dorsal='dorsal')
-    calculate_CMC_plot(rank_matrix=test_prob_matrix_HOG_d, type_feature_extractor='HOG', palm_dorsal='dorsal')
+    calculate_CMC_plot(score_matrix=test_prob_matrix_LBP_p, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='LBP', palm_dorsal='palmar')
+    calculate_CMC_plot(score_matrix=test_prob_matrix_HOG_p, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='HOG', palm_dorsal='palmar')
+    calculate_CMC_plot(score_matrix=test_prob_matrix_LBP_d, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='LBP', palm_dorsal='dorsal')
+    calculate_CMC_plot(score_matrix=test_prob_matrix_HOG_d, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='HOG', palm_dorsal='dorsal')
+    
     calculate_confusion_matrix(y_true=result_dict['test']['person_id'], y_pred=predicted)
 else: 
-    calculate_FAR_plot(predicted_scores=predicted_labels_LBP_p, true_labels=result_dict['test']['person_id'], num_impostors=num_impostors, type_feature_extractor='LBP', palm_dorsal='palmar')
-    calculate_FAR_plot(predicted_scores=predicted_labels_LBP_d, true_labels=result_dict['test']['person_id'], num_impostors=num_impostors, type_feature_extractor='LBP', palm_dorsal='dorsal')
-    calculate_FAR_plot(predicted_scores=predicted_labels_HOG_p, true_labels=result_dict['test']['person_id'], num_impostors=num_impostors, type_feature_extractor='HOG', palm_dorsal='palmar')
-    calculate_FAR_plot(predicted_scores=predicted_labels_HOG_d, true_labels=result_dict['test']['person_id'], num_impostors=num_impostors, type_feature_extractor='HOG', palm_dorsal='dorsal')
+    LBP_p_far_values = calculate_FAR_plot(predicted_scores=test_prob_matrix_LBP_p, true_labels=true_labels, type_feature_extractor='LBP', palm_dorsal='palmar')
+    LBP_d_far_values = calculate_FAR_plot(predicted_scores=test_prob_matrix_LBP_d, true_labels=true_labels, type_feature_extractor='LBP', palm_dorsal='dorsal')
+    HOG_p_far_values = calculate_FAR_plot(predicted_scores=test_prob_matrix_HOG_p, true_labels=true_labels, type_feature_extractor='HOG', palm_dorsal='palmar')
+    HOG_d_far_values = calculate_FAR_plot(predicted_scores=test_prob_matrix_HOG_d, true_labels=true_labels, type_feature_extractor='HOG', palm_dorsal='dorsal')
 
-    calculate_FRR_plot(predicted_scores=predicted_labels_LBP_p, true_labels=result_dict['test']['person_id'], num_genuines=num_sub - num_impostors, type_feature_extractor='LBP', palm_dorsal='palmar')
-    calculate_FRR_plot(predicted_scores=predicted_labels_LBP_d, true_labels=result_dict['test']['person_id'], num_genuines=num_sub - num_impostors, type_feature_extractor='LBP', palm_dorsal='dorsal')
-    calculate_FRR_plot(predicted_scores=predicted_labels_HOG_p, true_labels=result_dict['test']['person_id'], num_genuines=num_sub - num_impostors, type_feature_extractor='HOG', palm_dorsal='palmar')
-    calculate_FRR_plot(predicted_scores=predicted_labels_HOG_d, true_labels=result_dict['test']['person_id'], num_genuines=num_sub - num_impostors, type_feature_extractor='HOG', palm_dorsal='dorsal')
+    LBP_p_frr_values = calculate_FRR_plot(predicted_scores=test_prob_matrix_LBP_p, true_labels=true_labels, type_feature_extractor='LBP', palm_dorsal='palmar')
+    LBP_d_frr_values = calculate_FRR_plot(predicted_scores=test_prob_matrix_LBP_d, true_labels=true_labels, type_feature_extractor='LBP', palm_dorsal='dorsal')
+    HOG_p_frr_values = calculate_FRR_plot(predicted_scores=test_prob_matrix_HOG_p, true_labels=true_labels, type_feature_extractor='HOG', palm_dorsal='palmar')
+    HOG_d_frr_values = calculate_FRR_plot(predicted_scores=test_prob_matrix_HOG_d, true_labels=true_labels, type_feature_extractor='HOG', palm_dorsal='dorsal')
 
+    plot_FAR_FRR(far_values=LBP_p_far_values, frr_values=LBP_p_frr_values, type_feature_extractor='LBP', palm_dorsal='palmar')
+    plot_FAR_FRR(far_values=LBP_d_far_values, frr_values=LBP_d_frr_values, type_feature_extractor='LBP', palm_dorsal='dorsal')
+    plot_FAR_FRR(far_values=HOG_p_far_values, frr_values=HOG_p_frr_values, type_feature_extractor='HOG', palm_dorsal='palmar')
+    plot_FAR_FRR(far_values=HOG_d_far_values, frr_values=HOG_d_frr_values, type_feature_extractor='HOG', palm_dorsal='dorsal')
 
+'''
 feature_train = extract_CNN_features(net=alexNet1, num_classes=num_sub, image_path=image_path, transforms=transformsCNN, train_test='train', data_struct=result_dict, palmar_dorsal='palmar', batch_size=32)
 feature_test = extract_CNN_features(net=alexNet1, num_classes=num_sub, image_path=image_path, transforms=transformsCNN, train_test='test', data_struct=result_dict, palmar_dorsal='palmar', batch_size=32)
 SVC_Training(model=svcCNN, train_features=feature_train, labels=result_dict['train']['person_id'])
