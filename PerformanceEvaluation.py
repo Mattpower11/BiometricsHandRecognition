@@ -17,50 +17,6 @@ def calculate_confusion_matrix(y_pred, y_true):
     plt.title('Confusion Matrix')
     plt.show()
 
-def calculate_f1_score(y_pred, y_true):
-
-    cm = confusion_matrix(y_true, y_pred)
-    # Compute F1 score
-    FP = cm[0, 1]
-    FN = cm[1, 0]
-    TP = cm[1, 1]
-    precision = TP / (TP + FP)
-    recall = TP / (TP + FN)
-    f1 = 2 * (precision * recall) / (precision + recall)
-
-    return f1
-
-def calculate_precision(y_pred, y_true):
-
-    cm = confusion_matrix(y_true, y_pred)
-    # Compute precision
-    FP = cm[0, 1]
-    TP = cm[1, 1]
-    precision = TP / (TP + FP)
-
-    return precision
-
-def calculate_recall(y_pred, y_true):
-    
-    cm = confusion_matrix(y_true, y_pred)
-
-    # Compute recall
-    FN = cm[1, 0]
-    TP = cm[1, 1]
-    recall = TP / (TP + FN)
-
-    return recall
-
-def calculate_loss_plot(train_loss):
-    epochs = range(1, len(train_loss) + 1)
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(epochs, train_loss, 'bo-', label='Training loss')
-    plt.title('Training Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.show()
 
 def calculate_FAR_plot(predicted_scores: np.ndarray, true_labels: np.ndarray, type_feature_extractor: str, palm_dorsal: str):
     # Normalizzazione delle etichette: 1 = genuine, 0 = impostor

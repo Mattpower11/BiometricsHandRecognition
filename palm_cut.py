@@ -4,14 +4,14 @@ import pandas as pd
 
 def get_palm_cut(image):
     coordinate = []
+
     # Inizializza MediaPipe Hands
     mp_hands = mp.solutions.hands
+
     # Converti l'immagine in RGB
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
     # Rileva la mano
-    #cv2.imshow("Hand Detection", image_rgb)
-    #cv2.waitKey(0)
-    #print(image_rgb)
     with mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.5) as hands:
         results = hands.process(image_rgb)
 
@@ -20,10 +20,7 @@ def get_palm_cut(image):
                 for idx, landmark in enumerate(hand_landmarks.landmark):
                     h, w, _   = image.shape
                     x, y = int(landmark.x * w), int(landmark.y * h)
-                    #print(f"ID Punto {idx}: x={x}, y={y}")
                     coordinate.append((x, y))
-                                        # Disegna i punti sulla mano
-        #punto 0 1 5 17
 
     h, w, _ = image.shape
     image_vertex = []
@@ -53,15 +50,12 @@ def get_palm_cut(image):
                         case 17:
                             image_vertex.insert(3, (w,h))
 
-    # x, y, w, h 
-
     x = min(image_vertex[0][0], image_vertex[1][0], image_vertex[2][0], image_vertex[3][0])
     y = min(image_vertex[0][1], image_vertex[1][1], image_vertex[2][1], image_vertex[3][1])
     w = max(image_vertex[0][0], image_vertex[1][0], image_vertex[2][0], image_vertex[3][0]) - x
     h = max(image_vertex[0][1], image_vertex[1][1], image_vertex[2][1], image_vertex[3][1]) - y
 
     height, width, _ = image.shape
-
     
     if x < 0 or y < 0 or x + w > width or y + h > height:
         print("Le coordinate di ritaglio sono fuori dai limiti dell'immagine")
@@ -84,5 +78,3 @@ def create_palm_cut_dataset(image_path:str, palm_cut_image_path:str):
         cv2.imwrite(palm_cut_image_path + '/' + image_name, image)
 
     print("Palm Cut Completed\n")
-          
-#create_palm_cut_dataset(image_path="/home/mattpower/Downloads/Hands", palm_cut_image_path="/home/mattpower/Downloads/PalmCutHands")
