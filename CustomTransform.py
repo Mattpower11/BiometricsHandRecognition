@@ -64,6 +64,8 @@ class CustomHOGTransform:
         # Convert PIL -> RGB -> NumPy
         if self.isPalm:
             pil_image = pil_image.resize((150, 150))
+        else:
+            pil_image = pil_image.resize((1024, 1024))
         image = pil_image.convert('RGB')
         image = np.array(pil_image, dtype=np.uint8)
         gaussian_blurred = cv2.GaussianBlur(image, self.ksize, self.sigma) 
