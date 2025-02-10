@@ -169,7 +169,7 @@ svcHOG_d = SVC(kernel='poly', degree=5, decision_function_shape='ovr', class_wei
 # Number of subjects and images
 num_sub = 15
 num_img = 10
-isClosedSet = False
+isClosedSet = True
 num_impostors = 4
 # threshold = 0.5 Use of dynamic threshold
 # Percentile for the dynamic threshold
@@ -290,9 +290,9 @@ if not isClosedSet:
 
     # Calulate dynamic threshold
     threshold = compute_stream_dynamic_threshold(list_prob_matrix_palmar=list_train_prob_matrix_palmar, list_prob_matrix_dorsal=list_train_prob_matrix_dorsal, percentile=percentile)
-    predicted = streamEvaluationSVC(list_prob_matrix_palmar=list_test_prob_matrix_palmar, list_prob_matrix_dorsal=list_test_prob_matrix_dorsal, classes=svcHOG_d.classes_, threshold=threshold, isClosedSet=isClosedSet)
+    tot_prob_matrix, predicted = streamEvaluationSVC(list_prob_matrix_palmar=list_test_prob_matrix_palmar, list_prob_matrix_dorsal=list_test_prob_matrix_dorsal, classes=svcHOG_d.classes_, threshold=threshold, isClosedSet=isClosedSet)
 else:
-    predicted = streamEvaluationSVC(list_prob_matrix_palmar=list_test_prob_matrix_palmar, list_prob_matrix_dorsal=list_test_prob_matrix_dorsal, classes=svcHOG_d.classes_, isClosedSet=isClosedSet)
+    tot_prob_matrix, predicted = streamEvaluationSVC(list_prob_matrix_palmar=list_test_prob_matrix_palmar, list_prob_matrix_dorsal=list_test_prob_matrix_dorsal, classes=svcHOG_d.classes_, isClosedSet=isClosedSet)
 
 print(f"Accuracy multibiometric system: {calculate_accuracy(y_true=result_dict['test']['person_id'], y_pred=predicted)}")
 
@@ -308,23 +308,27 @@ if isClosedSet:
     calculate_CMC_plot(score_matrix=test_prob_matrix_HOG_p, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='HOG', palm_dorsal='palmar')
     calculate_CMC_plot(score_matrix=test_prob_matrix_LBP_d, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='LBP', palm_dorsal='dorsal')
     calculate_CMC_plot(score_matrix=test_prob_matrix_HOG_d, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='HOG', palm_dorsal='dorsal')
-    
+    calculate_CMC_plot(score_matrix=tot_prob_matrix, true_labels=true_labels, gallery_labels=gallery_labels, type_feature_extractor='Multibiometric', palm_dorsal='')
+
     calculate_confusion_matrix(y_true=result_dict['test']['person_id'], y_pred=predicted)
 else: 
     LBP_p_far_values = calculate_FAR_plot(predicted_scores=test_prob_matrix_LBP_p, true_labels=true_labels, type_feature_extractor='LBP', palm_dorsal='palmar')
     LBP_d_far_values = calculate_FAR_plot(predicted_scores=test_prob_matrix_LBP_d, true_labels=true_labels, type_feature_extractor='LBP', palm_dorsal='dorsal')
     HOG_p_far_values = calculate_FAR_plot(predicted_scores=test_prob_matrix_HOG_p, true_labels=true_labels, type_feature_extractor='HOG', palm_dorsal='palmar')
     HOG_d_far_values = calculate_FAR_plot(predicted_scores=test_prob_matrix_HOG_d, true_labels=true_labels, type_feature_extractor='HOG', palm_dorsal='dorsal')
+    tot_far_values = calculate_FAR_plot(predicted_scores=tot_prob_matrix, true_labels=true_labels, type_feature_extractor='Multibiometric', palm_dorsal='')
 
     LBP_p_frr_values = calculate_FRR_plot(predicted_scores=test_prob_matrix_LBP_p, true_labels=true_labels, type_feature_extractor='LBP', palm_dorsal='palmar')
     LBP_d_frr_values = calculate_FRR_plot(predicted_scores=test_prob_matrix_LBP_d, true_labels=true_labels, type_feature_extractor='LBP', palm_dorsal='dorsal')
     HOG_p_frr_values = calculate_FRR_plot(predicted_scores=test_prob_matrix_HOG_p, true_labels=true_labels, type_feature_extractor='HOG', palm_dorsal='palmar')
     HOG_d_frr_values = calculate_FRR_plot(predicted_scores=test_prob_matrix_HOG_d, true_labels=true_labels, type_feature_extractor='HOG', palm_dorsal='dorsal')
+    tot_frr_values = calculate_FRR_plot(predicted_scores=tot_prob_matrix, true_labels=true_labels, type_feature_extractor='Multibiometric', palm_dorsal='')
 
     plot_FAR_FRR(far_values=LBP_p_far_values, frr_values=LBP_p_frr_values, type_feature_extractor='LBP', palm_dorsal='palmar')
     plot_FAR_FRR(far_values=LBP_d_far_values, frr_values=LBP_d_frr_values, type_feature_extractor='LBP', palm_dorsal='dorsal')
     plot_FAR_FRR(far_values=HOG_p_far_values, frr_values=HOG_p_frr_values, type_feature_extractor='HOG', palm_dorsal='palmar')
     plot_FAR_FRR(far_values=HOG_d_far_values, frr_values=HOG_d_frr_values, type_feature_extractor='HOG', palm_dorsal='dorsal')
+    plot_FAR_FRR(far_values=tot_far_values, frr_values=tot_frr_values, type_feature_extractor='Multibiometric', palm_dorsal='')
 
 '''
 feature_train = extract_CNN_features(net=alexNet1, num_classes=num_sub, image_path=image_path, transforms=transformsCNN, train_test='train', data_struct=result_dict, palmar_dorsal='palmar', batch_size=32)
