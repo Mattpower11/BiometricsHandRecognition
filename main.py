@@ -11,7 +11,7 @@ import torchvision.models.feature_extraction as feature_extraction
 from PerformanceEvaluation import *
 from SVCTrainingTest import SVC_Testing, SVC_Training, find_best_match, find_weights
 from StreamEvaluation import streamEvaluationCNN
-from CustomTransform import CustomAlexNetTransform, CustomHOGTransform, CustomLBPCannyTransform, CustomLBPTransform, buildCustomTransform, buildCustomTransformHogExtended, buildCustomTransformPalmExtended, buildHistogramTransformations
+from CustomTransform import CustomAlexNetTransform, CustomHOGTransform, CustomLBPCannyTransform, CustomLBPTransform, buildCustomTransform, buildCustomTransformHogExtended, buildCustomTransformHogPalmExtended, buildCustomTransformPalmExtended, buildHistogramTransformations
 from StreamEvaluation import streamEvaluationSVC
 from utility import compute_dynamic_threshold, compute_stream_dynamic_threshold
 
@@ -145,7 +145,7 @@ transformsLBP = [
 ]
 
 transformsHOG = [
-    buildCustomTransformHogExtended(transform=CustomHOGTransform, ksize=(3,3), sigma=1),
+    buildCustomTransformHogPalmExtended(transform=CustomHOGTransform, ksize=(3,3), sigma=1, isPalm=True),
     buildCustomTransformHogExtended(transform=CustomHOGTransform, ksize=(3,3), sigma=1)
 ]
 

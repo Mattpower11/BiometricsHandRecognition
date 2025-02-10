@@ -55,18 +55,19 @@ class CustomLeNetTransform:
     
 # Custom transformation for HOG
 class CustomHOGTransform:
-    def __init__(self, ksize:Size, sigma:float):
+    def __init__(self, ksize:Size, sigma:float, isPalm:bool=False):
         self.ksize=ksize
         self.sigma=sigma
+        self.isPalm=isPalm
 
     def __call__(self, pil_image):
         # Convert PIL -> RGB -> NumPy
+        if self.isPalm:
+            pil_image = pil_image.resize((150, 150))
         image = pil_image.convert('RGB')
         image = np.array(pil_image, dtype=np.uint8)
         gaussian_blurred = cv2.GaussianBlur(image, self.ksize, self.sigma) 
-        
-        image = cv2.resize(gaussian_blurred, (1024, 1024))
-        return Image.fromarray(image, mode='RGB')
+        return Image.fromarray(gaussian_blurred, mode='RGB')
     
 # Custom transformation for LBP
 class CustomLBPTransform:
@@ -120,6 +121,11 @@ def buildCustomTransformPalmExtended(transform:type, isPalm:bool):
         transforms.ToTensor(),          
     ])
 
+def buildCustomTransformHogPalmExtended(transform:type, ksize:Size, sigma:float, isPalm:bool):
+    return transforms.Compose([
+        transform(ksize=ksize, sigma=sigma, isPalm=isPalm),
+        transforms.ToTensor(),          
+    ])
 
 # Build a histogram transformation
 def buildHistogramTransformations():
